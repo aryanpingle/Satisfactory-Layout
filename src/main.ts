@@ -54,11 +54,6 @@ class App {
     canvas: Canvas;
     state: State = State.IDLE;
 
-    /**
-     * Note:
-     * I make sure that scaling zooms in/out into the center of the canvas
-     */
-
     // Ensures that 512px on the canvas = 10 foundations = 80m
     scale: number = 512 / 10 / FOUNDATION_SIZE;
     /** The translation of the visible world space in pixels. */
@@ -98,11 +93,14 @@ class App {
         this.canvas.canvasElement.addEventListener(
             "wheel",
             (event) => {
-                // TODO: Exponentially slow down zooming out
+                // TODO: Ctrl + wheel
+                const ZOOM_INTENSITY = 0.0075;
                 const delta = event.deltaY;
+                const newScale = this.scale * Math.exp(delta * ZOOM_INTENSITY);
+
                 const canvasPoint = new Point(event.offsetX, event.offsetY);
-                console.log(canvasPoint);
-                this.scaleFromPoint(this.scale + delta * 0.1, canvasPoint);
+                
+                this.scaleFromPoint(newScale, canvasPoint);
             },
             { passive: true }
         );
