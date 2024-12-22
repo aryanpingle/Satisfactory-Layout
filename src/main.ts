@@ -60,7 +60,7 @@ class App {
      */
 
     // Ensures that 512px on the canvas = 10 foundations = 80m
-    scale: number = 512 / 10 / 8;
+    scale: number = 512 / 10 / FOUNDATION_SIZE;
     /** The translation of the visible world space in pixels. */
     translation: Point;
 
@@ -87,8 +87,6 @@ class App {
             console.log("clicked", worldPoint);
         };
         this.canvas.canvasElement.onmousedown = (event) => {
-            const canvasPoint = new Point(event.offsetX, event.offsetY);
-
             console.log("DOWN");
         };
         this.canvas.canvasElement.onmouseup = (event) => {
@@ -228,8 +226,7 @@ class App {
         this.setWorldSpaceTransform();
 
         /** Background grid */
-        // Every 8m i.e. every foundation
-        this.drawGrid(8, "#333", 0.25);
+        this.drawGrid(FOUNDATION_SIZE, "#333", 0.25);
     }
 }
 
