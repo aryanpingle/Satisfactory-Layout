@@ -1,6 +1,6 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
-import { snap } from "./utils";
+import { getButton, snap } from "./utils";
 import { StateManager } from "./state";
 import { Canvas } from "./canvas";
 
@@ -39,12 +39,16 @@ class App {
             this.onMouseDown.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
-            "mouseup",
-            this.onMouseUp.bind(this)
-        );
-        this.canvas.canvasElement.addEventListener(
             "mouseleave",
             this.onMouseLeave.bind(this)
+        );
+        this.canvas.canvasElement.addEventListener(
+            "mousemove",
+            this.onMouseMove.bind(this)
+        );
+        this.canvas.canvasElement.addEventListener(
+            "mouseup",
+            this.onMouseUp.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
             "wheel",
@@ -54,11 +58,21 @@ class App {
 
     // --- Event Handlers
 
-    onMouseDown(event: MouseEvent) {}
+    onMouseDown(event: MouseEvent) {
+        const state = this.stateManager.currentState;
+    }
 
-    onMouseUp(event: MouseEvent) {}
+    onMouseLeave(event: MouseEvent) {
+        const state = this.stateManager.currentState;
+    }
 
-    onMouseLeave(event: MouseEvent) {}
+    onMouseMove(event: MouseEvent) {
+        const state = this.stateManager.currentState;
+    }
+
+    onMouseUp(event: MouseEvent) {
+        const state = this.stateManager.currentState;
+    }
 
     onWheel(event: WheelEvent) {
         // Zooming in (touchpad gesture / ctrl+wheel) triggers ctrlKey
