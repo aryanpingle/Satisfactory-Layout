@@ -1,14 +1,24 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
-import { getButton, snap } from "./utils";
-import { StateManager } from "./state";
+import {
+    assertType,
+    getButton,
+    mouseCoordsAsPoint,
+    RectCoords,
+    snap,
+} from "./utils";
+import { IdleState, SelectingState, StateManager } from "./state";
 import { Canvas } from "./canvas";
+import { TestEntity } from "./entity/tester";
+import { EntityManager } from "./entity";
 
 const FOUNDATION_SIZE = 8;
 
-class App {
+class App extends StateManager {
+    currentState = new IdleState();
+
     canvas: Canvas;
-    stateManager: StateManager;
+    entityManager: EntityManager;
 
     // Ensures that 512px on the canvas = 10 foundations = 80m
     scale: number = 512 / 10 / FOUNDATION_SIZE;
@@ -16,17 +26,19 @@ class App {
     translation: Point;
 
     constructor() {
+        super();
+
         const canvasElement = document.querySelector(
-            "#canvas"
+            "#canvas",
         ) as HTMLCanvasElement;
         this.canvas = new Canvas(canvasElement);
 
-        this.stateManager = new StateManager();
+        this.entityManager = new EntityManager();
 
         // Center the world-space (0, 0) in the canvas
         this.translation = new Point(
             this.canvas.width / 2,
-            this.canvas.height / 2
+            this.canvas.height / 2,
         );
 
         // Set event listeners
@@ -36,42 +48,131 @@ class App {
         });
         this.canvas.canvasElement.addEventListener(
             "mousedown",
-            this.onMouseDown.bind(this)
+            this.onMouseDown.bind(this),
         );
         this.canvas.canvasElement.addEventListener(
             "mouseleave",
-            this.onMouseLeave.bind(this)
+            this.onMouseLeave.bind(this),
         );
         this.canvas.canvasElement.addEventListener(
             "mousemove",
-            this.onMouseMove.bind(this)
+            this.onMouseMove.bind(this),
         );
         this.canvas.canvasElement.addEventListener(
             "mouseup",
-            this.onMouseUp.bind(this)
+            this.onMouseUp.bind(this),
         );
         this.canvas.canvasElement.addEventListener(
             "wheel",
-            this.onWheel.bind(this)
+            this.onWheel.bind(this),
         );
+
+        // Load test entities
+        // TODO: BRUH put this shit in the EntityManager or smth
+        const ref1 = new TestEntity(this.entityManager);
+        ref1.x = -8;
+        ref1.y = -8;
+        const ref2 = new TestEntity(this.entityManager);
+        ref2.x = 8;
+        ref2.y = 8;
     }
 
     // --- Event Handlers
 
     onMouseDown(event: MouseEvent) {
-        const state = this.stateManager.currentState;
+        switch (getButton(event)) {
+            case "LMB":
+                this.onMouseDownLMB(event);
+                break;
+            case "MMB":
+                this.onMouseDownMMB(event);
+                break;
+            default:
+                console.log(
+                    `onMouseDown - button ${event.button} not supported`,
+                );
+                break;
+        }
     }
 
-    onMouseLeave(event: MouseEvent) {
-        const state = this.stateManager.currentState;
+    /**
+     * The following actions occur when LMB is down:
+     * 1. Selecting multiple objects
+     * 2. Moving selected objects
+     * 3. TODO: Connecting selected sockets (maybe shift + click?)
+     */
+    onMouseDownLMB(event: MouseEvent) {
+        const state = this.currentState;
+
+        // Idle state - select multiple objects
+        if (state.name === "idle") {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = this.canvasPointToWorldPoint(mouseCoords);
+            const newState = new SelectingState(mouseWorldCoords);
+            this.transitionState(newState);
+        }
     }
+
+    onMouseDownMMB(event: MouseEvent) {}
+
+    onMouseLeave(event: MouseEvent) {}
 
     onMouseMove(event: MouseEvent) {
-        const state = this.stateManager.currentState;
+        // No buttons pressed
+        if (event.buttons === 0) {
+        }
+
+        switch (getButton(event)) {
+            case "LMB":
+                this.onMouseMoveLMB(event);
+                break;
+            case "MMB":
+                this.onMouseMoveMMB(event);
+                break;
+            default:
+                console.log(
+                    `onMouseMove - button ${event.button} not supported`,
+                );
+                break;
+        }
     }
 
+    onMouseMoveLMB(event: MouseEvent) {
+        const state = this.currentState;
+
+        if (state.name === "idle") {
+            // Doesn't make sense for the state to be idle
+            // LMB is clicked, so it should be in some state
+        }
+        // Selecting state - update the state with the mouse coords
+        else if (state.name === "selecting") {
+            const selectingState = assertType<SelectingState>(state);
+
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = this.canvasPointToWorldPoint(mouseCoords);
+            selectingState.endCoords = mouseWorldCoords;
+
+            this.render();
+        }
+    }
+
+    onMouseMoveMMB(event: MouseEvent) {}
+
+    /**
+     * Note: I won't be caught DEAD handling multiple simultaneous
+     * mouse buttons.
+     */
     onMouseUp(event: MouseEvent) {
-        const state = this.stateManager.currentState;
+        const state = this.currentState;
+
+        if (state.name === "idle") {
+            // pass
+        } else if (state.name === "selecting") {
+            // TODO: Transition to selection state
+            this.transitionState(new IdleState());
+
+            this.render();
+        }
     }
 
     onWheel(event: WheelEvent) {
@@ -87,12 +188,20 @@ class App {
             // Prevent the browser's default zoom action
             event.preventDefault();
             event.stopPropagation();
-        } else {
+        }
+        // Scrolling up/down (for touchpads, all directions)
+        else {
             // Translation
             const translationPx = new Point(-event.deltaX, -event.deltaY);
             this.translate(translationPx);
+
+            // Prevent the browser's default zoom action
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
+
+    // --- End Event Handlers
 
     /**
      * Rescale the canvas view using a fixed perspective point on the canvas.
@@ -226,11 +335,48 @@ class App {
     }
 
     render() {
+        /** Reset the canvas */
         this.canvas.clear();
         this.setWorldSpaceTransform();
 
         /** Background grid */
         this.drawGrid();
+
+        /** Render entities */
+        this.entityManager.getActiveEntities().forEach((entity) => {
+            entity.render(this.canvas);
+        });
+
+        // DEBUG: Checking if selection state works fine
+        let state = this.currentState;
+        if (state.name === "selecting") {
+            const selectingState = assertType<SelectingState>(state);
+
+            const ctx = this.canvas.ctx;
+            ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
+            ctx.lineWidth = 0.2;
+            ctx.strokeStyle = "rgb(0, 191, 255)";
+
+            // Highlight selected entities
+            const selected = this.entityManager.getEntitiesIntersecting(
+                selectingState.startCoords,
+                selectingState.endCoords,
+            );
+            selected.forEach((entity) => {
+                const rectCoords: RectCoords = [
+                    entity.x - entity.width / 2,
+                    entity.y - entity.width / 2,
+                    entity.width,
+                    entity.height,
+                ];
+                ctx.fillRect(...rectCoords);
+                ctx.strokeRect(...rectCoords);
+            });
+
+            // Draw selection rectangle
+            ctx.fillRect(...selectingState.asRectCoords());
+            ctx.strokeRect(...selectingState.asRectCoords());
+        }
     }
 }
 

@@ -14,14 +14,10 @@ interface BaseState {
     exit(): void;
 }
 
-export class StateManager {
-    currentState: BaseState;
+export abstract class StateManager {
+    abstract currentState: BaseState;
 
-    constructor() {
-        this.currentState = new IdleState();
-    }
-
-    transition(nextState: BaseState) {
+    transitionState(nextState: BaseState) {
         this.currentState.exit();
         nextState.enter();
         this.currentState = nextState;
@@ -41,24 +37,34 @@ export class IdleState implements BaseState {
 
 // --- Selecting State
 
-export interface SelectingStateData {
-    startingMouseCoords: Point;
-}
-
 /**
  * When the user is dragging their mouse with LMB to select one or more items.
  */
 export class SelectingState implements BaseState {
     name: StateName = "selecting";
 
-    data: SelectingStateData;
+    startCoords: Point;
+    endCoords: Point;
 
-    constructor(data: SelectingStateData) {
-        this.data = data;
+    constructor(startCoords: Point) {
+        this.startCoords = startCoords;
+        this.endCoords = startCoords;
     }
 
     enter(): void {}
     exit(): void {}
+
+    /**
+     * Get the [x, y, width, height] representation of the start and end coords.
+     */
+    asRectCoords(): [number, number, number, number] {
+        return [
+            this.startCoords.x,
+            this.startCoords.y,
+            this.endCoords.x - this.startCoords.x,
+            this.endCoords.y - this.startCoords.y,
+        ];
+    }
 }
 
 // --- Selection State

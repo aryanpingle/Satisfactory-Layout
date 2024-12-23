@@ -21,7 +21,7 @@ export class Canvas {
         this.canvasElement.addEventListener(
             "resize",
             () => this.onCanvasResize(),
-            options
+            options,
         );
     }
 
