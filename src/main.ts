@@ -1,58 +1,14 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
+import { snap } from "./utils";
+import { StateManager } from "./state";
+import { Canvas } from "./canvas";
 
 const FOUNDATION_SIZE = 8;
 
-class Canvas {
-    canvasElement: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-
-    /** Auto-updated width */
-    width: number;
-    /** Auto-updated height */
-    height: number;
-
-    constructor(canvasElement: HTMLCanvasElement) {
-        this.canvasElement = canvasElement;
-
-        this.ctx = this.canvasElement.getContext("2d")!;
-        this.width = this.canvasElement.width;
-        this.height = this.canvasElement.height;
-
-        // Add resize listener to the canvas element
-        const options: AddEventListenerOptions = {
-            passive: true,
-        };
-        this.canvasElement.addEventListener(
-            "resize",
-            () => this.onCanvasResize(),
-            options
-        );
-    }
-
-    onCanvasResize() {
-        console.log("canvas resized", this);
-        this.width = this.canvasElement.width;
-        this.height = this.canvasElement.height;
-    }
-
-    // --- UTILITY METHODS
-
-    clear() {
-        // Set scale to 1:1
-        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        this.ctx.clearRect(0, 0, this.width, this.height);
-    }
-}
-
-enum State {
-    IDLE,
-    PANNING,
-}
-
 class App {
     canvas: Canvas;
-    state: State = State.IDLE;
+    stateManager: StateManager;
 
     // Ensures that 512px on the canvas = 10 foundations = 80m
     scale: number = 512 / 10 / FOUNDATION_SIZE;
@@ -64,6 +20,8 @@ class App {
             "#canvas"
         ) as HTMLCanvasElement;
         this.canvas = new Canvas(canvasElement);
+
+        this.stateManager = new StateManager();
 
         // Center the world-space (0, 0) in the canvas
         this.translation = new Point(
@@ -90,20 +48,25 @@ class App {
         this.canvas.canvasElement.onmouseleave = (event) => {
             console.log("LEFT");
         };
-        this.canvas.canvasElement.addEventListener(
-            "wheel",
-            (event) => {
-                // TODO: Ctrl + wheel
+        this.canvas.canvasElement.addEventListener("wheel", (event) => {
+            // Zooming in (touchpad gesture / ctrl+wheel) triggers ctrlKey
+            if (event.ctrlKey) {
+                // Exponential zoom
                 const ZOOM_INTENSITY = 0.0075;
-                const delta = event.deltaY;
+                const delta = -event.deltaY;
                 const newScale = this.scale * Math.exp(delta * ZOOM_INTENSITY);
-
                 const canvasPoint = new Point(event.offsetX, event.offsetY);
-                
                 this.scaleFromPoint(newScale, canvasPoint);
-            },
-            { passive: true }
-        );
+
+                // Prevent the browser's default zoom action
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                // Translation
+                const translationPx = new Point(-event.deltaX, -event.deltaY);
+                this.translate(translationPx);
+            }
+        });
     }
 
     /**
@@ -114,7 +77,7 @@ class App {
      */
     scaleFromPoint(newScale: number, canvasPoint: Point) {
         // Constrain the new scale
-        const MAX_SCALE = 100;
+        const MAX_SCALE = 50;
         const MIN_SCALE = 1;
 
         newScale = Math.max(MIN_SCALE, newScale);
@@ -141,6 +104,11 @@ class App {
         this.render();
     }
 
+    translate(delta: Point) {
+        this.translation._add(delta);
+        this.render();
+    }
+
     canvasPointToWorldPoint(canvasPoint: Point) {
         // worldPoint = -translation/scale + canvasPoint/scale
         const worldTopLeft = this.translation.mult(-1).div(this.scale);
@@ -157,18 +125,17 @@ class App {
     }
 
     /**
-     * Draw the reference grid with the current stroke style and line width.
+     * Draw the reference grid.
      * TODO: Draw only as many lines as needed on screen.
      */
-    drawGrid(gridSize: number, strokeStyle: string, lineWidth: number) {
+    drawGrid() {
         // On either side
-        const NUM_LINES = 10;
         const OVERLAY_SIZE = 20;
 
         const ctx = this.canvas.ctx;
         // Line style
-        ctx.strokeStyle = strokeStyle;
-        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 0.25;
         // Label style
         ctx.textAlign = "center";
         ctx.textRendering = "optimizeLegibility";
@@ -176,28 +143,42 @@ class App {
         ctx.fillStyle = "white";
         ctx.font = "normal 2px monospace";
 
+        // Render only the lines in view
+        const topLeftWorldPoint = this.canvasPointToWorldPoint(new Point(0, 0));
+        const canvasWidthInWorldSpace = this.canvas.width * this.scale;
+        const canvasHeightInWorldSpace = this.canvas.height * this.scale;
+
         // Horizontal lines
-        for (let i = -NUM_LINES; i <= NUM_LINES; ++i) {
-            const x1 = -NUM_LINES * gridSize;
-            const x2 = +NUM_LINES * gridSize;
-            const y = i * gridSize;
+        const topStart = snap(topLeftWorldPoint.y, FOUNDATION_SIZE);
+        for (
+            let y = topStart;
+            y <= topStart + canvasHeightInWorldSpace;
+            y += FOUNDATION_SIZE
+        ) {
+            const x1 = topLeftWorldPoint.x;
+            const x2 = topLeftWorldPoint.x + canvasWidthInWorldSpace;
+
             ctx.beginPath();
             ctx.moveTo(x1, y);
             ctx.lineTo(x2, y);
             ctx.stroke();
 
             // Label
-            const worldOverlayPoint = this.canvasPointToWorldPoint(
-                new Point(OVERLAY_SIZE / 2, 0)
-            );
-            ctx.fillText(String(y), worldOverlayPoint.x, y);
+            // const worldOverlayPoint = this.canvasPointToWorldPoint(
+            //     new Point(OVERLAY_SIZE / 2, 0)
+            // );
+            // ctx.fillText(String(y), worldOverlayPoint.x, y);
         }
 
         // Vertical lines
-        for (let i = -NUM_LINES; i <= NUM_LINES; ++i) {
-            const y1 = -NUM_LINES * gridSize;
-            const y2 = +NUM_LINES * gridSize;
-            const x = i * gridSize;
+        const leftStart = snap(topLeftWorldPoint.x, FOUNDATION_SIZE);
+        for (
+            let x = leftStart;
+            x <= leftStart + canvasWidthInWorldSpace;
+            x += FOUNDATION_SIZE
+        ) {
+            const y1 = topLeftWorldPoint.y;
+            const y2 = topLeftWorldPoint.y + canvasHeightInWorldSpace;
 
             ctx.beginPath();
             ctx.moveTo(x, y1);
@@ -205,10 +186,10 @@ class App {
             ctx.stroke();
 
             // Label
-            const worldOverlayPoint = this.canvasPointToWorldPoint(
-                new Point(0, OVERLAY_SIZE / 2)
-            );
-            ctx.fillText(String(x), x, worldOverlayPoint.y);
+            // const worldOverlayPoint = this.canvasPointToWorldPoint(
+            //     new Point(0, OVERLAY_SIZE / 2)
+            // );
+            // ctx.fillText(String(x), x, worldOverlayPoint.y);
         }
     }
 
@@ -224,7 +205,7 @@ class App {
         this.setWorldSpaceTransform();
 
         /** Background grid */
-        this.drawGrid(FOUNDATION_SIZE, "#333", 0.25);
+        this.drawGrid();
     }
 }
 
