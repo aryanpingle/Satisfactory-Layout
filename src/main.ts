@@ -29,44 +29,55 @@ class App {
             this.canvas.height / 2
         );
 
-        this.setCanvasEventListeners();
+        // Set event listeners
+        this.canvas.canvasElement.addEventListener("click", () => {
+            // NUTHIN'
+            // onClick is not reliable as it registers even after dragging
+        });
+        this.canvas.canvasElement.addEventListener(
+            "mousedown",
+            this.onMouseDown.bind(this)
+        );
+        this.canvas.canvasElement.addEventListener(
+            "mouseup",
+            this.onMouseUp.bind(this)
+        );
+        this.canvas.canvasElement.addEventListener(
+            "mouseleave",
+            this.onMouseLeave.bind(this)
+        );
+        this.canvas.canvasElement.addEventListener(
+            "wheel",
+            this.onWheel.bind(this)
+        );
     }
 
-    setCanvasEventListeners() {
-        // Set event listeners
-        this.canvas.canvasElement.onclick = (event) => {
-            const canvasPoint = new Point(event.offsetX, event.offsetY);
-            const worldPoint = this.canvasPointToWorldPoint(canvasPoint);
-            console.log("clicked", worldPoint);
-        };
-        this.canvas.canvasElement.onmousedown = (event) => {
-            console.log("DOWN");
-        };
-        this.canvas.canvasElement.onmouseup = (event) => {
-            console.log("UP");
-        };
-        this.canvas.canvasElement.onmouseleave = (event) => {
-            console.log("LEFT");
-        };
-        this.canvas.canvasElement.addEventListener("wheel", (event) => {
-            // Zooming in (touchpad gesture / ctrl+wheel) triggers ctrlKey
-            if (event.ctrlKey) {
-                // Exponential zoom
-                const ZOOM_INTENSITY = 0.0075;
-                const delta = -event.deltaY;
-                const newScale = this.scale * Math.exp(delta * ZOOM_INTENSITY);
-                const canvasPoint = new Point(event.offsetX, event.offsetY);
-                this.scaleFromPoint(newScale, canvasPoint);
+    // --- Event Handlers
 
-                // Prevent the browser's default zoom action
-                event.preventDefault();
-                event.stopPropagation();
-            } else {
-                // Translation
-                const translationPx = new Point(-event.deltaX, -event.deltaY);
-                this.translate(translationPx);
-            }
-        });
+    onMouseDown(event: MouseEvent) {}
+
+    onMouseUp(event: MouseEvent) {}
+
+    onMouseLeave(event: MouseEvent) {}
+
+    onWheel(event: WheelEvent) {
+        // Zooming in (touchpad gesture / ctrl+wheel) triggers ctrlKey
+        if (event.ctrlKey) {
+            // Exponential zoom
+            const ZOOM_INTENSITY = 0.0075;
+            const delta = -event.deltaY;
+            const newScale = this.scale * Math.exp(delta * ZOOM_INTENSITY);
+            const canvasPoint = new Point(event.offsetX, event.offsetY);
+            this.scaleFromPoint(newScale, canvasPoint);
+
+            // Prevent the browser's default zoom action
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            // Translation
+            const translationPx = new Point(-event.deltaX, -event.deltaY);
+            this.translate(translationPx);
+        }
     }
 
     /**

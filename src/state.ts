@@ -1,6 +1,12 @@
 import Point from "@mapbox/point-geometry";
 
-export type StateName = "idle" | "selecting" | "selection" | "moving" | "panning" | "buffer";
+export type StateName =
+    | "idle"
+    | "selecting"
+    | "selection"
+    | "moving"
+    | "panning"
+    | "buffer";
 
 interface BaseState {
     name: StateName;
@@ -44,7 +50,7 @@ export interface SelectingStateData {
  */
 export class SelectingState implements BaseState {
     name: StateName = "selecting";
-    
+
     data: SelectingStateData;
 
     constructor(data: SelectingStateData) {
@@ -66,7 +72,7 @@ export interface SelectionStateData {
  */
 export class SelectionState implements BaseState {
     name: StateName = "selection";
-    
+
     data: SelectionStateData;
 
     constructor(data: SelectionStateData) {
