@@ -103,7 +103,6 @@ export class App {
 
     /**
      * Draw the reference grid.
-     * TODO: Draw only as many lines as needed on screen.
      */
     drawGrid() {
         const ctx = this.canvas.ctx;
