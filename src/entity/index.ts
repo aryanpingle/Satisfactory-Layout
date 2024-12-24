@@ -1,5 +1,6 @@
 import Point from "@mapbox/point-geometry";
 import { Canvas } from "../canvas";
+import { Rectangle } from "../utils";
 
 export type EntityId = number;
 
@@ -37,7 +38,7 @@ export abstract class Entity {
 
     constructor(manager: EntityManager) {
         this.manager = manager;
-        this.manager.addEntity(this);
+        this.manager.registerEntity(this);
     }
 
     /**
@@ -46,13 +47,16 @@ export abstract class Entity {
      */
     abstract render(canvas: Canvas): void;
 
-    containsPoint(point: Point): boolean {
-        return (
-            this.x - this.width / 2 <= point.x &&
-            point.x <= this.x + this.width / 2 &&
-            this.y - this.height / 2 <= point.y &&
-            point.y <= this.y + this.height / 2
+    getBoundingRect(): Rectangle {
+        return Rectangle.fromCenter(
+            new Point(this.x, this.y),
+            this.width,
+            this.height
         );
+    }
+
+    containsPoint(point: Point): boolean {
+        return this.getBoundingRect().containsPoint(point);
     }
 
     /**
@@ -61,22 +65,8 @@ export abstract class Entity {
      *
      * TODO: Preprocess the parameters so you don't have to max() and min() every time
      */
-    intersects(p1: Point, p2: Point): boolean {
-        // Rectangle A
-        const rAx1 = this.x - this.width / 2;
-        const rAx2 = this.x + this.width / 2;
-        const rAy1 = this.y - this.height / 2;
-        const rAy2 = this.y + this.height / 2;
-
-        // Rectangle B
-        const rBx1 = Math.min(p1.x, p2.x);
-        const rBx2 = Math.max(p1.x, p2.x);
-        const rBy1 = Math.min(p1.y, p2.y);
-        const rBy2 = Math.max(p1.y, p2.y);
-
-        // https://stackoverflow.com/a/306332/8089674
-        // modified because y increases downwards
-        return rAx1 < rBx2 && rAx2 > rBx1 && rAy1 < rBy2 && rAy2 > rBy1;
+    intersects(rect: Rectangle): boolean {
+        return this.getBoundingRect().intersects(rect);
     }
 }
 
@@ -99,6 +89,8 @@ export class EntityManager {
     }
 
     getEntity(id: number): Entity {
+        if (id < 0 || id >= this.entities.length)
+            throw new Error(`Entity with id ${id} does not exist.`);
         return this.entities[id];
     }
 
@@ -111,17 +103,23 @@ export class EntityManager {
         return entities.filter((entity) => entity.containsPoint(point));
     }
 
-    getEntitiesIntersecting(p1: Point, p2: Point): Entity[] {
+    getEntitiesIntersecting(rect: Rectangle): Entity[] {
         const entities = this.getActiveEntities();
-        return entities.filter((entity) => entity.intersects(p1, p2));
+        return entities.filter((entity) => entity.intersects(rect));
     }
 
     // --- Static Methods
 
+    static getMergedBounds(entities: Entity[]): Rectangle {
+        return Rectangle.union(
+            entities.map((entity) => entity.getBoundingRect())
+        );
+    }
+
     static load(totalEntityData: EntitySerializedData[]) {
         totalEntityData.forEach((entityData) => {
             throw new Error(
-                `Entity type '${entityData.name}' loading has not been implemented.`,
+                `Entity type '${entityData.name}' loading has not been implemented.`
             );
         });
     }

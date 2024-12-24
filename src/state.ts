@@ -1,4 +1,5 @@
 import Point from "@mapbox/point-geometry";
+import { Rectangle } from "./utils";
 
 export type StateName =
     | "idle"
@@ -35,8 +36,6 @@ export class IdleState implements BaseState {
     exit(): void {}
 }
 
-// --- Selecting State
-
 /**
  * When the user is dragging their mouse with LMB to select one or more items.
  */
@@ -54,23 +53,9 @@ export class SelectingState implements BaseState {
     enter(): void {}
     exit(): void {}
 
-    /**
-     * Get the [x, y, width, height] representation of the start and end coords.
-     */
-    asRectCoords(): [number, number, number, number] {
-        return [
-            this.startCoords.x,
-            this.startCoords.y,
-            this.endCoords.x - this.startCoords.x,
-            this.endCoords.y - this.startCoords.y,
-        ];
+    getBoundingRect(): Rectangle {
+        return Rectangle.fromTwoPoints(this.startCoords, this.endCoords);
     }
-}
-
-// --- Selection State
-
-export interface SelectionStateData {
-    selection: Set<number>;
 }
 
 /**
@@ -79,10 +64,26 @@ export interface SelectionStateData {
 export class SelectionState implements BaseState {
     name: StateName = "selection";
 
-    data: SelectionStateData;
+    selection: Set<number>;
 
-    constructor(data: SelectionStateData) {
-        this.data = data;
+    constructor(selection: Set<number>) {
+        this.selection = selection;
+    }
+
+    enter(): void {}
+    exit(): void {}
+}
+
+/**
+ * When the user is dragging their mouse with LMB to select one or more items.
+ */
+export class MovingState implements BaseState {
+    name: StateName = "selection";
+
+    selection: Set<number>;
+
+    constructor(selection: Set<number>) {
+        this.selection = selection;
     }
 
     enter(): void {}

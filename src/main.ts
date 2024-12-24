@@ -7,7 +7,12 @@ import {
     RectCoords,
     snap,
 } from "./utils";
-import { IdleState, SelectingState, StateManager } from "./state";
+import {
+    IdleState,
+    SelectingState,
+    SelectionState,
+    StateManager,
+} from "./state";
 import { Canvas } from "./canvas";
 import { TestEntity } from "./entity/tester";
 import { EntityManager } from "./entity";
@@ -29,7 +34,7 @@ class App extends StateManager {
         super();
 
         const canvasElement = document.querySelector(
-            "#canvas",
+            "#canvas"
         ) as HTMLCanvasElement;
         this.canvas = new Canvas(canvasElement);
 
@@ -38,7 +43,7 @@ class App extends StateManager {
         // Center the world-space (0, 0) in the canvas
         this.translation = new Point(
             this.canvas.width / 2,
-            this.canvas.height / 2,
+            this.canvas.height / 2
         );
 
         // Set event listeners
@@ -48,23 +53,23 @@ class App extends StateManager {
         });
         this.canvas.canvasElement.addEventListener(
             "mousedown",
-            this.onMouseDown.bind(this),
+            this.onMouseDown.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
             "mouseleave",
-            this.onMouseLeave.bind(this),
+            this.onMouseLeave.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
             "mousemove",
-            this.onMouseMove.bind(this),
+            this.onMouseMove.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
             "mouseup",
-            this.onMouseUp.bind(this),
+            this.onMouseUp.bind(this)
         );
         this.canvas.canvasElement.addEventListener(
             "wheel",
-            this.onWheel.bind(this),
+            this.onWheel.bind(this)
         );
 
         // Load test entities
@@ -89,7 +94,7 @@ class App extends StateManager {
                 break;
             default:
                 console.log(
-                    `onMouseDown - button ${event.button} not supported`,
+                    `onMouseDown - button ${event.button} not supported`
                 );
                 break;
         }
@@ -110,6 +115,14 @@ class App extends StateManager {
             const mouseWorldCoords = this.canvasPointToWorldPoint(mouseCoords);
             const newState = new SelectingState(mouseWorldCoords);
             this.transitionState(newState);
+        } else if (state.name === "selection") {
+            /**
+             * Selection:
+             * 1. If mousedown on the selection, start moving state
+             * 2. If mousedown elsewhere, start selecting state
+             */
+            const selectingState = assertType<SelectingState>(state);
+            const selectionRect = selectingState.getBoundingRect();
         }
     }
 
@@ -131,7 +144,7 @@ class App extends StateManager {
                 break;
             default:
                 console.log(
-                    `onMouseMove - button ${event.button} not supported`,
+                    `onMouseMove - button ${event.button} not supported`
                 );
                 break;
         }
@@ -165,11 +178,29 @@ class App extends StateManager {
     onMouseUp(event: MouseEvent) {
         const state = this.currentState;
 
+        // Idle - Nothing
         if (state.name === "idle") {
-            // pass
-        } else if (state.name === "selecting") {
-            // TODO: Transition to selection state
-            this.transitionState(new IdleState());
+        }
+        // Selecting - Select entities intersecting the selection box
+        else if (state.name === "selecting") {
+            const selectingState = assertType<SelectingState>(state);
+
+            // Get selected entities
+            const selectionRect = selectingState.getBoundingRect();
+            const selected =
+                this.entityManager.getEntitiesIntersecting(selectionRect);
+
+            // If nothing was selected, transition to idle
+            if (selected.length === 0) {
+                this.transitionState(new IdleState());
+                this.render();
+                return;
+            }
+
+            const selectedIds = selected.map((entity) => entity.id);
+
+            const selectionState = new SelectionState(new Set(selectedIds));
+            this.transitionState(selectionState);
 
             this.render();
         }
@@ -335,6 +366,7 @@ class App extends StateManager {
     }
 
     render() {
+        console.log(`State - ${this.currentState.name}`);
         /** Reset the canvas */
         this.canvas.clear();
         this.setWorldSpaceTransform();
@@ -348,35 +380,54 @@ class App extends StateManager {
         });
 
         // DEBUG: Checking if selection state works fine
+        const ctx = this.canvas.ctx;
         let state = this.currentState;
         if (state.name === "selecting") {
             const selectingState = assertType<SelectingState>(state);
 
-            const ctx = this.canvas.ctx;
             ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
             ctx.lineWidth = 0.2;
             ctx.strokeStyle = "rgb(0, 191, 255)";
 
-            // Highlight selected entities
-            const selected = this.entityManager.getEntitiesIntersecting(
-                selectingState.startCoords,
-                selectingState.endCoords,
-            );
-            selected.forEach((entity) => {
-                const rectCoords: RectCoords = [
-                    entity.x - entity.width / 2,
-                    entity.y - entity.width / 2,
-                    entity.width,
-                    entity.height,
-                ];
+            // Highlight intersecting entities
+            const selectionRect = selectingState.getBoundingRect();
+            const intersecting =
+                this.entityManager.getEntitiesIntersecting(selectionRect);
+            intersecting.forEach((entity) => {
+                const rectCoords = entity.getBoundingRect().xywh();
                 ctx.fillRect(...rectCoords);
                 ctx.strokeRect(...rectCoords);
             });
 
             // Draw selection rectangle
-            ctx.fillRect(...selectingState.asRectCoords());
-            ctx.strokeRect(...selectingState.asRectCoords());
+            ctx.fillRect(...selectionRect.xywh());
+            ctx.strokeRect(...selectionRect.xywh());
+        } else if (state.name === "selection") {
+            const selectionState = assertType<SelectionState>(state);
+
+            ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
+            ctx.lineWidth = 0.2;
+            ctx.strokeStyle = "rgb(0, 191, 255)";
+
+            // Highlight selected entities
+            const selected = Array.from(selectionState.selection).map((id) =>
+                this.entityManager.getEntity(id)
+            );
+            const selectionUnionRect = EntityManager.getMergedBounds(selected);
+            const selectionUnionXYWH = selectionUnionRect.xywh();
+            ctx.fillRect(...selectionUnionXYWH);
+            ctx.strokeRect(...selectionUnionXYWH);
         }
+
+        this.debugState();
+    }
+
+    debugState() {
+        const ctx = this.canvas.ctx;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // identity matrix
+        ctx.font = "bold 20px monospace";
+        ctx.fillStyle = "crimson";
+        ctx.fillText(this.currentState.name, this.canvas.width / 2, 20);
     }
 }
 
