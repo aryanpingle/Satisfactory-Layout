@@ -1,8 +1,15 @@
 import Point from "@mapbox/point-geometry";
 import { type App } from "./main";
-import { IdleState, SelectingState, StateFactory } from "./state";
+import {
+    IdleState,
+    RelocatingState,
+    SelectingState,
+    SelectionState,
+    StateFactory,
+} from "./state";
 import { StateManager, TransitionTable } from "./stateManager";
 import { getButton, mouseCoordsAsPoint, Rectangle } from "./utils";
+import { EntityManager } from "./entity";
 
 const myTransitionTable = {
     idle: {
@@ -14,25 +21,10 @@ const myTransitionTable = {
             app.stateManager.transition(selectingState);
         },
         scroll: (state: IdleState, event: WheelEvent, app: App) => {
-            // Translation
-            const translationPx = new Point(-event.deltaX, -event.deltaY);
-            app.translate(translationPx);
-
-            // Prevent the browser's default zoom action
-            event.preventDefault();
-            event.stopPropagation();
+            simpleScroll(event, app);
         },
         zoom: (state: IdleState, event: WheelEvent, app: App) => {
-            // Exponential zoom
-            const ZOOM_INTENSITY = 0.0075;
-            const delta = -event.deltaY;
-            const newScale = app.scale * Math.exp(delta * ZOOM_INTENSITY);
-            const canvasPoint = new Point(event.offsetX, event.offsetY);
-            app.scaleFromPoint(newScale, canvasPoint);
-
-            // Prevent the browser's default zoom action
-            event.preventDefault();
-            event.stopPropagation();
+            simpleZoom(event, app);
         },
     },
     selecting: {
@@ -46,7 +38,7 @@ const myTransitionTable = {
             // Get selected entities
             const selectionRect = Rectangle.fromTwoPoints(
                 state.startCoords,
-                state.endCoords
+                state.endCoords,
             );
             const entitiesCaughtInSelection =
                 app.entityManager.getEntitiesIntersecting(selectionRect);
@@ -60,10 +52,94 @@ const myTransitionTable = {
 
             // Something in the selection box - transition to selection
             const selectedIds = entitiesCaughtInSelection.map(
-                (entity) => entity.id
+                (entity) => entity.id,
             );
             const selectionState = StateFactory.createSelectionState(
-                new Set(selectedIds)
+                new Set(selectedIds),
+            );
+            app.stateManager.transition(selectionState);
+
+            app.render();
+        },
+        scroll: (state: SelectingState, event: WheelEvent, app: App) => {
+            simpleScroll(event, app);
+
+            // Update the selection box
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+            state.endCoords = mouseWorldCoords;
+
+            app.render();
+        },
+        zoom: (state: SelectingState, event: WheelEvent, app: App) => {
+            simpleZoom(event, app);
+
+            // Update the selection box
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+            state.endCoords = mouseWorldCoords;
+
+            app.render();
+        },
+    },
+    selection: {
+        mousedown_lmb: (state: SelectionState, event: MouseEvent, app: App) => {
+            // Get the bounding rect over the selection
+            const selectedEntities = Array.from(state.selection).map((id) =>
+                app.entityManager.getEntity(id),
+            );
+            const selectionUnionRect =
+                EntityManager.getMergedBounds(selectedEntities);
+
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+
+            // Mouse pressed over selection - move it
+            if (selectionUnionRect.containsPoint(mouseWorldCoords)) {
+                const relocatingState = StateFactory.createRelocatingState(
+                    state.selection,
+                    mouseWorldCoords,
+                );
+                app.stateManager.transition(relocatingState);
+                app.render();
+            }
+            // outside selection - transition to selecting
+            else {
+                const selectingState =
+                    StateFactory.createSelectingState(mouseWorldCoords);
+                app.stateManager.transition(selectingState);
+                app.render();
+            }
+        },
+        scroll: (state, event: WheelEvent, app: App) => {
+            simpleScroll(event, app);
+        },
+        zoom: (state, event: WheelEvent, app: App) => {
+            simpleZoom(event, app);
+        },
+    },
+    relocating: {
+        mousemove: (state: RelocatingState, event: MouseEvent, app: App) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+
+            // Update positions of selected entities
+            const selectedEntities = app.entityManager.getEntities(
+                state.selection,
+            );
+            const displacement = mouseWorldCoords.sub(state.coords);
+            selectedEntities.forEach((entity) => {
+                entity.coords._add(displacement);
+            });
+
+            // Update the state
+            state.coords = mouseWorldCoords;
+
+            app.render();
+        },
+        mouseup: (state: RelocatingState, event: MouseEvent, app: App) => {
+            const selectionState = StateFactory.createSelectionState(
+                state.selection,
             );
             app.stateManager.transition(selectionState);
 
@@ -72,11 +148,36 @@ const myTransitionTable = {
     },
 } as TransitionTable;
 
+// --- Common Functions
+
+export function simpleScroll(event: WheelEvent, app: App) {
+    // Translation
+    const translationPx = new Point(-event.deltaX, -event.deltaY);
+    app.translate(translationPx);
+
+    // Prevent the browser's default zoom action
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+export function simpleZoom(event: WheelEvent, app: App) {
+    // Exponential zoom
+    const ZOOM_INTENSITY = 0.0075;
+    const delta = -event.deltaY;
+    const newScale = app.scale * Math.exp(delta * ZOOM_INTENSITY);
+    const canvasPoint = new Point(event.offsetX, event.offsetY);
+    app.scaleFromPoint(newScale, canvasPoint);
+
+    // Prevent the browser's default zoom action
+    event.preventDefault();
+    event.stopPropagation();
+}
+
 export function setupStateManagement(app: App) {
     // Set up state manager
     app.stateManager = new StateManager(
         myTransitionTable,
-        StateFactory.createIdleState()
+        StateFactory.createIdleState(),
     );
 
     // Set up transition trigger listeners

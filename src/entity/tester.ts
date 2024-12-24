@@ -20,8 +20,8 @@ export class TestEntity extends Entity {
 
         ctx.fillStyle = "crimson";
         ctx.fillRect(
-            this.x - this.width / 2,
-            this.y - this.height / 2,
+            this.coords.x - this.width / 2,
+            this.coords.y - this.height / 2,
             this.width,
             this.height,
         );

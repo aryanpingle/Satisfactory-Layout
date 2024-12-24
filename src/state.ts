@@ -33,6 +33,17 @@ export class StateFactory {
             selection: selection,
         };
     }
+
+    static createRelocatingState(
+        selection: Set<EntityId>,
+        coords: Point,
+    ): RelocatingState {
+        return {
+            name: "relocating",
+            selection: selection,
+            coords: coords,
+        };
+    }
 }
 
 export interface IdleState {
@@ -50,5 +61,15 @@ export interface SelectionState {
     selection: Set<EntityId>;
 }
 
-export type State = IdleState | SelectingState | SelectionState;
+export interface RelocatingState {
+    name: "relocating";
+    selection: Set<EntityId>;
+    coords: Point;
+}
+
+export type State =
+    | IdleState
+    | SelectingState
+    | SelectionState
+    | RelocatingState;
 export type StateName = State["name"];

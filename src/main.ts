@@ -1,12 +1,6 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
-import {
-    assertType,
-    getButton,
-    mouseCoordsAsPoint,
-    Rectangle,
-    snap,
-} from "./utils";
+import { Rectangle, snap } from "./utils";
 import { Canvas } from "./canvas";
 import { TestEntity } from "./entity/tester";
 import { EntityManager } from "./entity";
@@ -28,7 +22,7 @@ export class App {
 
     constructor() {
         const canvasElement = document.querySelector(
-            "#canvas"
+            "#canvas",
         ) as HTMLCanvasElement;
         this.canvas = new Canvas(canvasElement);
 
@@ -39,17 +33,17 @@ export class App {
         // Center the world-space (0, 0) in the canvas
         this.translation = new Point(
             this.canvas.width / 2,
-            this.canvas.height / 2
+            this.canvas.height / 2,
         );
 
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
         const ref1 = new TestEntity(this.entityManager);
-        ref1.x = -8;
-        ref1.y = -8;
+        ref1.coords.x = -8;
+        ref1.coords.y = -8;
         const ref2 = new TestEntity(this.entityManager);
-        ref2.x = 8;
-        ref2.y = 8;
+        ref2.coords.x = 8;
+        ref2.coords.y = 8;
     }
 
     /**
@@ -204,7 +198,7 @@ export class App {
             // Highlight intersecting entities
             const selectionRect = Rectangle.fromTwoPoints(
                 state.startCoords,
-                state.endCoords
+                state.endCoords,
             );
             const entitiesCaughtInSelection =
                 app.entityManager.getEntitiesIntersecting(selectionRect);
@@ -218,14 +212,14 @@ export class App {
             // Draw selection rectangle
             ctx.fillRect(...selectionRect.xywh());
             ctx.strokeRect(...selectionRect.xywh());
-        } else if (state.name === "selection") {
+        } else if (state.name === "selection" || state.name === "relocating") {
             ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
             ctx.lineWidth = 0.2;
             ctx.strokeStyle = "rgb(0, 191, 255)";
 
             // Highlight selected entities
             const selected = Array.from(state.selection).map((id) =>
-                this.entityManager.getEntity(id)
+                this.entityManager.getEntity(id),
             );
             const selectionUnionRect = EntityManager.getMergedBounds(selected);
             const selectionUnionXYWH = selectionUnionRect.xywh();
@@ -244,7 +238,7 @@ export class App {
         ctx.fillText(
             this.stateManager.currentState.name,
             this.canvas.width / 2,
-            20
+            20,
         );
     }
 }

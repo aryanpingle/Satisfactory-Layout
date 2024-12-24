@@ -84,7 +84,7 @@ export class Rectangle {
             Math.min(p1.x, p2.x),
             Math.min(p1.y, p2.y),
             Math.max(p1.x, p2.x),
-            Math.max(p1.y, p2.y)
+            Math.max(p1.y, p2.y),
         );
     }
 
@@ -93,20 +93,20 @@ export class Rectangle {
             center.x - width / 2,
             center.y - height / 2,
             center.x + width / 2,
-            center.y + height / 2
+            center.y + height / 2,
         );
     }
 
     static fromTopLeft(
         topLeft: Point,
         width: number,
-        height: number
+        height: number,
     ): Rectangle {
         return new Rectangle(
             topLeft.x,
             topLeft.y,
             topLeft.x + width,
-            topLeft.y + height
+            topLeft.y + height,
         );
     }
 
