@@ -4,25 +4,21 @@ import {
     assertType,
     getButton,
     mouseCoordsAsPoint,
-    RectCoords,
+    Rectangle,
     snap,
 } from "./utils";
-import {
-    IdleState,
-    SelectingState,
-    SelectionState,
-    StateManager,
-} from "./state";
 import { Canvas } from "./canvas";
 import { TestEntity } from "./entity/tester";
 import { EntityManager } from "./entity";
+import { StateManager } from "./stateManager";
+import { setupStateManagement } from "./events";
 
 const FOUNDATION_SIZE = 8;
 
-class App extends StateManager {
-    currentState = new IdleState();
-
+export class App {
     canvas: Canvas;
+    // Will be initialized in events.ts
+    stateManager: StateManager = null as any;
     entityManager: EntityManager;
 
     // Ensures that 512px on the canvas = 10 foundations = 80m
@@ -31,12 +27,12 @@ class App extends StateManager {
     translation: Point;
 
     constructor() {
-        super();
-
         const canvasElement = document.querySelector(
             "#canvas"
         ) as HTMLCanvasElement;
         this.canvas = new Canvas(canvasElement);
+
+        setupStateManagement(this);
 
         this.entityManager = new EntityManager();
 
@@ -44,32 +40,6 @@ class App extends StateManager {
         this.translation = new Point(
             this.canvas.width / 2,
             this.canvas.height / 2
-        );
-
-        // Set event listeners
-        this.canvas.canvasElement.addEventListener("click", () => {
-            // NUTHIN'
-            // onClick is not reliable as it registers even after dragging
-        });
-        this.canvas.canvasElement.addEventListener(
-            "mousedown",
-            this.onMouseDown.bind(this)
-        );
-        this.canvas.canvasElement.addEventListener(
-            "mouseleave",
-            this.onMouseLeave.bind(this)
-        );
-        this.canvas.canvasElement.addEventListener(
-            "mousemove",
-            this.onMouseMove.bind(this)
-        );
-        this.canvas.canvasElement.addEventListener(
-            "mouseup",
-            this.onMouseUp.bind(this)
-        );
-        this.canvas.canvasElement.addEventListener(
-            "wheel",
-            this.onWheel.bind(this)
         );
 
         // Load test entities
@@ -81,158 +51,6 @@ class App extends StateManager {
         ref2.x = 8;
         ref2.y = 8;
     }
-
-    // --- Event Handlers
-
-    onMouseDown(event: MouseEvent) {
-        switch (getButton(event)) {
-            case "LMB":
-                this.onMouseDownLMB(event);
-                break;
-            case "MMB":
-                this.onMouseDownMMB(event);
-                break;
-            default:
-                console.log(
-                    `onMouseDown - button ${event.button} not supported`
-                );
-                break;
-        }
-    }
-
-    /**
-     * The following actions occur when LMB is down:
-     * 1. Selecting multiple objects
-     * 2. Moving selected objects
-     * 3. TODO: Connecting selected sockets (maybe shift + click?)
-     */
-    onMouseDownLMB(event: MouseEvent) {
-        const state = this.currentState;
-
-        // Idle state - select multiple objects
-        if (state.name === "idle") {
-            const mouseCoords = mouseCoordsAsPoint(event);
-            const mouseWorldCoords = this.canvasPointToWorldPoint(mouseCoords);
-            const newState = new SelectingState(mouseWorldCoords);
-            this.transitionState(newState);
-        } else if (state.name === "selection") {
-            /**
-             * Selection:
-             * 1. If mousedown on the selection, start moving state
-             * 2. If mousedown elsewhere, start selecting state
-             */
-            const selectingState = assertType<SelectingState>(state);
-            const selectionRect = selectingState.getBoundingRect();
-        }
-    }
-
-    onMouseDownMMB(event: MouseEvent) {}
-
-    onMouseLeave(event: MouseEvent) {}
-
-    onMouseMove(event: MouseEvent) {
-        // No buttons pressed
-        if (event.buttons === 0) {
-        }
-
-        switch (getButton(event)) {
-            case "LMB":
-                this.onMouseMoveLMB(event);
-                break;
-            case "MMB":
-                this.onMouseMoveMMB(event);
-                break;
-            default:
-                console.log(
-                    `onMouseMove - button ${event.button} not supported`
-                );
-                break;
-        }
-    }
-
-    onMouseMoveLMB(event: MouseEvent) {
-        const state = this.currentState;
-
-        if (state.name === "idle") {
-            // Doesn't make sense for the state to be idle
-            // LMB is clicked, so it should be in some state
-        }
-        // Selecting state - update the state with the mouse coords
-        else if (state.name === "selecting") {
-            const selectingState = assertType<SelectingState>(state);
-
-            const mouseCoords = mouseCoordsAsPoint(event);
-            const mouseWorldCoords = this.canvasPointToWorldPoint(mouseCoords);
-            selectingState.endCoords = mouseWorldCoords;
-
-            this.render();
-        }
-    }
-
-    onMouseMoveMMB(event: MouseEvent) {}
-
-    /**
-     * Note: I won't be caught DEAD handling multiple simultaneous
-     * mouse buttons.
-     */
-    onMouseUp(event: MouseEvent) {
-        const state = this.currentState;
-
-        // Idle - Nothing
-        if (state.name === "idle") {
-        }
-        // Selecting - Select entities intersecting the selection box
-        else if (state.name === "selecting") {
-            const selectingState = assertType<SelectingState>(state);
-
-            // Get selected entities
-            const selectionRect = selectingState.getBoundingRect();
-            const selected =
-                this.entityManager.getEntitiesIntersecting(selectionRect);
-
-            // If nothing was selected, transition to idle
-            if (selected.length === 0) {
-                this.transitionState(new IdleState());
-                this.render();
-                return;
-            }
-
-            const selectedIds = selected.map((entity) => entity.id);
-
-            const selectionState = new SelectionState(new Set(selectedIds));
-            this.transitionState(selectionState);
-
-            this.render();
-        }
-    }
-
-    onWheel(event: WheelEvent) {
-        // Zooming in (touchpad gesture / ctrl+wheel) triggers ctrlKey
-        if (event.ctrlKey) {
-            // Exponential zoom
-            const ZOOM_INTENSITY = 0.0075;
-            const delta = -event.deltaY;
-            const newScale = this.scale * Math.exp(delta * ZOOM_INTENSITY);
-            const canvasPoint = new Point(event.offsetX, event.offsetY);
-            this.scaleFromPoint(newScale, canvasPoint);
-
-            // Prevent the browser's default zoom action
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        // Scrolling up/down (for touchpads, all directions)
-        else {
-            // Translation
-            const translationPx = new Point(-event.deltaX, -event.deltaY);
-            this.translate(translationPx);
-
-            // Prevent the browser's default zoom action
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    }
-
-    // --- End Event Handlers
 
     /**
      * Rescale the canvas view using a fixed perspective point on the canvas.
@@ -294,9 +112,6 @@ class App extends StateManager {
      * TODO: Draw only as many lines as needed on screen.
      */
     drawGrid() {
-        // On either side
-        const OVERLAY_SIZE = 20;
-
         const ctx = this.canvas.ctx;
         // Line style
         ctx.strokeStyle = "#333";
@@ -366,7 +181,6 @@ class App extends StateManager {
     }
 
     render() {
-        console.log(`State - ${this.currentState.name}`);
         /** Reset the canvas */
         this.canvas.clear();
         this.setWorldSpaceTransform();
@@ -381,19 +195,21 @@ class App extends StateManager {
 
         // DEBUG: Checking if selection state works fine
         const ctx = this.canvas.ctx;
-        let state = this.currentState;
+        let state = this.stateManager.currentState;
         if (state.name === "selecting") {
-            const selectingState = assertType<SelectingState>(state);
-
             ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
             ctx.lineWidth = 0.2;
             ctx.strokeStyle = "rgb(0, 191, 255)";
 
             // Highlight intersecting entities
-            const selectionRect = selectingState.getBoundingRect();
-            const intersecting =
-                this.entityManager.getEntitiesIntersecting(selectionRect);
-            intersecting.forEach((entity) => {
+            const selectionRect = Rectangle.fromTwoPoints(
+                state.startCoords,
+                state.endCoords
+            );
+            const entitiesCaughtInSelection =
+                app.entityManager.getEntitiesIntersecting(selectionRect);
+
+            entitiesCaughtInSelection.forEach((entity) => {
                 const rectCoords = entity.getBoundingRect().xywh();
                 ctx.fillRect(...rectCoords);
                 ctx.strokeRect(...rectCoords);
@@ -403,14 +219,12 @@ class App extends StateManager {
             ctx.fillRect(...selectionRect.xywh());
             ctx.strokeRect(...selectionRect.xywh());
         } else if (state.name === "selection") {
-            const selectionState = assertType<SelectionState>(state);
-
             ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
             ctx.lineWidth = 0.2;
             ctx.strokeStyle = "rgb(0, 191, 255)";
 
             // Highlight selected entities
-            const selected = Array.from(selectionState.selection).map((id) =>
+            const selected = Array.from(state.selection).map((id) =>
                 this.entityManager.getEntity(id)
             );
             const selectionUnionRect = EntityManager.getMergedBounds(selected);
@@ -427,7 +241,11 @@ class App extends StateManager {
         ctx.setTransform(1, 0, 0, 1, 0, 0); // identity matrix
         ctx.font = "bold 20px monospace";
         ctx.fillStyle = "crimson";
-        ctx.fillText(this.currentState.name, this.canvas.width / 2, 20);
+        ctx.fillText(
+            this.stateManager.currentState.name,
+            this.canvas.width / 2,
+            20
+        );
     }
 }
 

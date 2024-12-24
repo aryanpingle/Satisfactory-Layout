@@ -1,91 +1,54 @@
 import Point from "@mapbox/point-geometry";
-import { Rectangle } from "./utils";
+import { EntityId } from "./entity";
 
-export type StateName =
-    | "idle"
-    | "selecting"
-    | "selection"
-    | "moving"
-    | "panning"
-    | "buffer";
+export type EventName =
+    | "mousedown_lmb"
+    | "mousedown_mmb"
+    | "mousedown_rmb"
+    | "mouseenter"
+    | "mouseleave"
+    | "mousemove"
+    | "mouseup"
+    | "scroll"
+    | "zoom";
 
-interface BaseState {
-    name: StateName;
-    enter(): void;
-    exit(): void;
-}
+export class StateFactory {
+    static createIdleState(): IdleState {
+        return {
+            name: "idle",
+        };
+    }
 
-export abstract class StateManager {
-    abstract currentState: BaseState;
+    static createSelectingState(coords: Point): SelectingState {
+        return {
+            name: "selecting",
+            startCoords: coords,
+            endCoords: coords,
+        };
+    }
 
-    transitionState(nextState: BaseState) {
-        this.currentState.exit();
-        nextState.enter();
-        this.currentState = nextState;
+    static createSelectionState(selection: Set<EntityId>): SelectionState {
+        return {
+            name: "selection",
+            selection: selection,
+        };
     }
 }
 
-// State implementations
-
-export class IdleState implements BaseState {
-    name: StateName = "idle";
-
-    constructor() {}
-
-    enter(): void {}
-    exit(): void {}
+export interface IdleState {
+    name: "idle";
 }
 
-/**
- * When the user is dragging their mouse with LMB to select one or more items.
- */
-export class SelectingState implements BaseState {
-    name: StateName = "selecting";
-
+export interface SelectingState {
+    name: "selecting";
     startCoords: Point;
     endCoords: Point;
-
-    constructor(startCoords: Point) {
-        this.startCoords = startCoords;
-        this.endCoords = startCoords;
-    }
-
-    enter(): void {}
-    exit(): void {}
-
-    getBoundingRect(): Rectangle {
-        return Rectangle.fromTwoPoints(this.startCoords, this.endCoords);
-    }
 }
 
-/**
- * When the user is dragging their mouse with LMB to select one or more items.
- */
-export class SelectionState implements BaseState {
-    name: StateName = "selection";
-
-    selection: Set<number>;
-
-    constructor(selection: Set<number>) {
-        this.selection = selection;
-    }
-
-    enter(): void {}
-    exit(): void {}
+export interface SelectionState {
+    name: "selection";
+    selection: Set<EntityId>;
 }
 
-/**
- * When the user is dragging their mouse with LMB to select one or more items.
- */
-export class MovingState implements BaseState {
-    name: StateName = "selection";
-
-    selection: Set<number>;
-
-    constructor(selection: Set<number>) {
-        this.selection = selection;
-    }
-
-    enter(): void {}
-    exit(): void {}
-}
+export type State = IdleState | SelectingState | SelectionState;
+export type StateName = State["name"];
