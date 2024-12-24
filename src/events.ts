@@ -8,7 +8,7 @@ import {
     StateFactory,
 } from "./state";
 import { StateManager, TransitionTable } from "./stateManager";
-import { getButton, mouseCoordsAsPoint, Rectangle } from "./utils";
+import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
 import { EntityManager } from "./entity";
 
 const myTransitionTable = {
@@ -54,9 +54,8 @@ const myTransitionTable = {
             const selectedIds = entitiesCaughtInSelection.map(
                 (entity) => entity.id,
             );
-            const selectionState = StateFactory.createSelectionState(
-                new Set(selectedIds),
-            );
+            const selectionState =
+                StateFactory.createSelectionState(selectedIds);
             app.stateManager.transition(selectionState);
 
             app.render();
@@ -85,7 +84,7 @@ const myTransitionTable = {
     selection: {
         mousedown_lmb: (state: SelectionState, event: MouseEvent, app: App) => {
             // Get the bounding rect over the selection
-            const selectedEntities = Array.from(state.selection).map((id) =>
+            const selectedEntities = Array.from(state.selectedIds).map((id) =>
                 app.entityManager.getEntity(id),
             );
             const selectionUnionRect =
@@ -96,8 +95,12 @@ const myTransitionTable = {
 
             // Mouse pressed over selection - move it
             if (selectionUnionRect.containsPoint(mouseWorldCoords)) {
+                const selectionCoords = app.entityManager
+                    .getEntities(state.selectedIds)
+                    .map((entity) => entity.coords);
                 const relocatingState = StateFactory.createRelocatingState(
-                    state.selection,
+                    state.selectedIds,
+                    selectionCoords,
                     mouseWorldCoords,
                 );
                 app.stateManager.transition(relocatingState);
@@ -125,21 +128,20 @@ const myTransitionTable = {
 
             // Update positions of selected entities
             const selectedEntities = app.entityManager.getEntities(
-                state.selection,
+                state.selectedIds,
             );
-            const displacement = mouseWorldCoords.sub(state.coords);
-            selectedEntities.forEach((entity) => {
-                entity.coords._add(displacement);
+            const displacement = mouseWorldCoords.sub(state.startMouseCoords);
+            const snappedDisplacement = modPoint(displacement, 2);
+            selectedEntities.forEach((entity, index) => {
+                entity.coords =
+                    state.selectedEntityCoords[index].add(snappedDisplacement);
             });
-
-            // Update the state
-            state.coords = mouseWorldCoords;
 
             app.render();
         },
         mouseup: (state: RelocatingState, event: MouseEvent, app: App) => {
             const selectionState = StateFactory.createSelectionState(
-                state.selection,
+                state.selectedIds,
             );
             app.stateManager.transition(selectionState);
 

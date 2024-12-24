@@ -27,21 +27,23 @@ export class StateFactory {
         };
     }
 
-    static createSelectionState(selection: Set<EntityId>): SelectionState {
+    static createSelectionState(selection: EntityId[]): SelectionState {
         return {
             name: "selection",
-            selection: selection,
+            selectedIds: selection,
         };
     }
 
     static createRelocatingState(
-        selection: Set<EntityId>,
+        selection: EntityId[],
+        selectionCoords: Point[],
         coords: Point,
     ): RelocatingState {
         return {
             name: "relocating",
-            selection: selection,
-            coords: coords,
+            selectedIds: selection,
+            selectedEntityCoords: selectionCoords,
+            startMouseCoords: coords,
         };
     }
 }
@@ -58,13 +60,14 @@ export interface SelectingState {
 
 export interface SelectionState {
     name: "selection";
-    selection: Set<EntityId>;
+    selectedIds: EntityId[];
 }
 
 export interface RelocatingState {
     name: "relocating";
-    selection: Set<EntityId>;
-    coords: Point;
+    selectedIds: EntityId[];
+    selectedEntityCoords: Point[];
+    startMouseCoords: Point;
 }
 
 export type State =

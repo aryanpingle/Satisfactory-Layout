@@ -218,7 +218,7 @@ export class App {
             ctx.strokeStyle = "rgb(0, 191, 255)";
 
             // Highlight selected entities
-            const selected = Array.from(state.selection).map((id) =>
+            const selected = Array.from(state.selectedIds).map((id) =>
                 this.entityManager.getEntity(id),
             );
             const selectionUnionRect = EntityManager.getMergedBounds(selected);

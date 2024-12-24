@@ -6,6 +6,10 @@ export function snap(value: number, mod: number) {
     return value - (value % mod);
 }
 
+export function modPoint(point: Point, mod: number): Point {
+    return new Point(snap(point.x, mod), snap(point.y, mod));
+}
+
 export function getButton(event: MouseEvent): "LMB" | "MMB" | "RMB" | null {
     if (event.button === 0) return "LMB";
     if (event.button === 1) return "LMB";
