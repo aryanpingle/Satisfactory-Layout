@@ -6,8 +6,7 @@ import { TestEntity } from "./entity/tester";
 import { EntityManager } from "./entity";
 import { StateManager } from "./stateManager";
 import { setupStateManagement } from "./events";
-
-const FOUNDATION_SIZE = 8;
+import { Colors, FOUNDATION_SIZE } from "./constants";
 
 export class App {
     canvas: Canvas;
@@ -15,8 +14,8 @@ export class App {
     stateManager: StateManager = null as any;
     entityManager: EntityManager;
 
-    // Ensures that 512px on the canvas = 10 foundations = 80m
-    scale: number = 512 / 10 / FOUNDATION_SIZE;
+    // Ensures that 750px on the canvas = 10 foundations = 80m
+    scale: number = 750 / 10 / FOUNDATION_SIZE;
     /** The translation of the visible world space in pixels. */
     translation: Point;
 
@@ -39,11 +38,9 @@ export class App {
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
         const ref1 = new TestEntity(this.entityManager);
-        ref1.coords.x = -8;
-        ref1.coords.y = -8;
+        ref1.coords = new Point(-4, -4);
         const ref2 = new TestEntity(this.entityManager);
-        ref2.coords.x = 8;
-        ref2.coords.y = 8;
+        ref2.coords = new Point(4, 4);
     }
 
     /**
@@ -81,7 +78,7 @@ export class App {
         this.render();
     }
 
-    translate(delta: Point) {
+    translateBy(delta: Point) {
         this.translation._add(delta);
         this.render();
     }
@@ -190,9 +187,9 @@ export class App {
         const ctx = this.canvas.ctx;
         let state = this.stateManager.currentState;
         if (state.name === "selecting") {
-            ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
+            ctx.fillStyle = Colors.figmaBlue.alpha(0.1).string();
             ctx.lineWidth = 0.2;
-            ctx.strokeStyle = "rgb(0, 191, 255)";
+            ctx.strokeStyle = Colors.figmaBlue.string();
 
             // Highlight intersecting entities
             const selectionRect = Rectangle.fromTwoPoints(
@@ -212,9 +209,9 @@ export class App {
             ctx.fillRect(...selectionRect.xywh());
             ctx.strokeRect(...selectionRect.xywh());
         } else if (state.name === "selection" || state.name === "relocating") {
-            ctx.fillStyle = "rgba(0, 191, 255, 0.1)";
+            ctx.fillStyle = Colors.figmaBlue.alpha(0.1).string();
             ctx.lineWidth = 0.2;
-            ctx.strokeStyle = "rgb(0, 191, 255)";
+            ctx.strokeStyle = Colors.figmaBlue.string();
 
             // Highlight selected entities
             const selected = Array.from(state.selectedIds).map((id) =>

@@ -46,6 +46,17 @@ export class StateFactory {
             startMouseCoords: coords,
         };
     }
+
+    static createPanningState(
+        coords: Point,
+        currentState: State,
+    ): PanningState {
+        return {
+            name: "panning",
+            startCoords: coords,
+            previousState: currentState,
+        };
+    }
 }
 
 export interface IdleState {
@@ -70,9 +81,17 @@ export interface RelocatingState {
     startMouseCoords: Point;
 }
 
+export interface PanningState {
+    name: "panning";
+    startCoords: Point;
+    previousState: State;
+}
+
 export type State =
     | IdleState
     | SelectingState
     | SelectionState
-    | RelocatingState;
+    | RelocatingState
+    | PanningState;
+
 export type StateName = State["name"];

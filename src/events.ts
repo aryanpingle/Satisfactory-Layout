@@ -2,6 +2,7 @@ import Point from "@mapbox/point-geometry";
 import { type App } from "./main";
 import {
     IdleState,
+    PanningState,
     RelocatingState,
     SelectingState,
     SelectionState,
@@ -19,6 +20,15 @@ const myTransitionTable = {
             const selectingState =
                 StateFactory.createSelectingState(mouseWorldCoords);
             app.stateManager.transition(selectingState);
+        },
+        // Middle mouse button - panning state
+        mousedown_mmb: (state: IdleState, event: MouseEvent, app: App) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const panningState = StateFactory.createPanningState(
+                mouseCoords,
+                state,
+            );
+            app.stateManager.transition(panningState);
         },
         scroll: (state: IdleState, event: WheelEvent, app: App) => {
             simpleScroll(event, app);
@@ -114,10 +124,18 @@ const myTransitionTable = {
                 app.render();
             }
         },
-        scroll: (state, event: WheelEvent, app: App) => {
+        mousedown_mmb: (state: SelectionState, event: MouseEvent, app: App) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const panningState = StateFactory.createPanningState(
+                mouseCoords,
+                state,
+            );
+            app.stateManager.transition(panningState);
+        },
+        scroll: (state: SelectionState, event: WheelEvent, app: App) => {
             simpleScroll(event, app);
         },
-        zoom: (state, event: WheelEvent, app: App) => {
+        zoom: (state: SelectionState, event: WheelEvent, app: App) => {
             simpleZoom(event, app);
         },
     },
@@ -147,6 +165,31 @@ const myTransitionTable = {
 
             app.render();
         },
+        scroll: (state: SelectionState, event: WheelEvent, app: App) => {
+            simpleScroll(event, app);
+        },
+        zoom: (state: SelectionState, event: WheelEvent, app: App) => {
+            simpleZoom(event, app);
+        },
+    },
+    panning: {
+        mousemove: (state: PanningState, event: MouseEvent, app: App) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const translationPx = mouseCoords.sub(state.startCoords);
+
+            state.startCoords = mouseCoords;
+
+            app.translateBy(translationPx);
+        },
+        mouseup: (state: PanningState, event: MouseEvent, app: App) => {
+            // Exit panning, go back to the previous state
+            app.stateManager.transition(state.previousState);
+
+            app.render();
+        },
+        zoom: (state: PanningState, event: WheelEvent, app: App) => {
+            simpleZoom(event, app);
+        },
     },
 } as TransitionTable;
 
@@ -155,7 +198,7 @@ const myTransitionTable = {
 export function simpleScroll(event: WheelEvent, app: App) {
     // Translation
     const translationPx = new Point(-event.deltaX, -event.deltaY);
-    app.translate(translationPx);
+    app.translateBy(translationPx);
 
     // Prevent the browser's default zoom action
     event.preventDefault();
