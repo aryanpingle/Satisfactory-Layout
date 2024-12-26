@@ -251,6 +251,7 @@ export function setupStateManagement(app: App) {
     // Set up transition trigger listeners
 
     // export type EventName =
+    //     | "keypress"
     //     | "mousedown_lmb"
     //     | "mousedown_mmb"
     //     | "mousedown_rmb"
@@ -261,6 +262,10 @@ export function setupStateManagement(app: App) {
     //     | "scroll"
     //     | "zoom";
 
+    // keypress
+    app.canvas.canvasElement.addEventListener("keypress", (event) => {
+        app.stateManager.triggerEvent("keypress", event, app);
+    });
     // mousedown - lmb, mmb, rmb
     app.canvas.canvasElement.addEventListener("mousedown", (event) => {
         const button = getButton(event);

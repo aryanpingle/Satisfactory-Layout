@@ -2,6 +2,7 @@ import Point from "@mapbox/point-geometry";
 import { EntityId } from "./entity/entity";
 
 export type EventName =
+    | "keypress"
     | "mousedown_lmb"
     | "mousedown_mmb"
     | "mousedown_rmb"
