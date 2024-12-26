@@ -2,12 +2,12 @@ import "./style.css";
 import Point from "@mapbox/point-geometry";
 import { Rectangle, snap } from "./utils";
 import { Canvas } from "./canvas";
-import { TestEntity } from "./entity/tester";
 import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
 import { setupStateManagement } from "./events";
 import { Colors, FOUNDATION_SIZE } from "./constants";
 import { Constructor } from "./entity/constructor";
+import { Supply } from "./entity/supply";
 
 export class App {
     canvas: Canvas;
@@ -38,9 +38,8 @@ export class App {
 
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
-        const ref1 = new TestEntity(this.entityManager);
-        ref1.coords = new Point(-4, -4);
         const c = new Constructor(this.entityManager);
+        const s = new Supply(this.entityManager);
     }
 
     /**

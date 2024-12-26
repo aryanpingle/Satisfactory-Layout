@@ -2,7 +2,7 @@ import { Canvas } from "../canvas";
 import { Colors } from "../constants";
 import { PartId } from "../dataset";
 import { Rectangle } from "../utils";
-import { Entity, EntityManager, EntityName } from "./entity";
+import { Entity, EntityManager } from "./entity";
 import { IOConstruct } from "./ioconstruct";
 
 export type SocketIOType = "input" | "output";
@@ -18,7 +18,7 @@ export interface SocketParams {
 
 export abstract class Socket extends Entity {
     // Inherited from Entity
-    name: EntityName = "Socket";
+    name: string = "Socket";
     attachment: boolean = true;
     width: number = 2;
     height: number = 2;

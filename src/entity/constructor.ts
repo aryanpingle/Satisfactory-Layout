@@ -23,7 +23,7 @@ const socketOutputConfigs: IOConstructParams["socketOutputConfigs"] = [
 
 export class Constructor extends Machine {
     constructName: string = "Constructor";
-    width: number = CONSTRUCTOR_WIDTH + SOCKET_SIZE;
+    width: number = CONSTRUCTOR_WIDTH;
     height: number = CONSTRUCTOR_HEIGHT;
 
     constructor(manager: EntityManager) {

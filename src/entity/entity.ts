@@ -4,18 +4,16 @@ import { Rectangle } from "../utils";
 
 export type EntityId = number;
 
-export type EntityName = "Socket" | "TestEntity" | "IOConstruct" | "Text";
-
 // --- Serialization
 
 export interface EntitySerializedData {
-    name: EntityName;
+    name: string;
 }
 
 // --- Base entity class
 
 export abstract class Entity {
-    abstract name: EntityName;
+    abstract name: string;
     /** Whether this entity is attached to another entity. */
     abstract attachment: boolean;
     /** Width of the bounding box containing the rendered entity. */

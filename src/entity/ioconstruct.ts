@@ -1,5 +1,5 @@
 import Point from "@mapbox/point-geometry";
-import { Entity, EntityId, EntityManager, EntityName } from "./entity";
+import { Entity, EntityId, EntityManager } from "./entity";
 import { SocketInput, SocketOutput, SocketParams } from "./socket";
 import { Canvas } from "../canvas";
 
@@ -17,7 +17,7 @@ export interface IOConstructParams {
  */
 export abstract class IOConstruct extends Entity {
     // Inherited from Entity
-    name: EntityName = "IOConstruct";
+    name = "IOConstruct";
     attachment = false;
 
     abstract constructName: string;

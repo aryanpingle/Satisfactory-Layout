@@ -37,6 +37,18 @@ export function asRectCoords(p1: Point, p2: Point): RectCoords {
     ];
 }
 
+export function fillCircle(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    radius: number,
+) {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radius, radius, 0, 0, 2 * Math.PI, false);
+    ctx.fill();
+    ctx.closePath();
+}
+
 export class Rectangle {
     x1: number;
     y1: number;
