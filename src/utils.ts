@@ -49,6 +49,25 @@ export function fillCircle(
     ctx.closePath();
 }
 
+export function drawConnectionLine(
+    ctx: CanvasRenderingContext2D,
+    p1: Point,
+    p2: Point,
+) {
+    const mid = p1.add(p2).div(2);
+
+    ctx.strokeStyle = "goldenrod";
+    ctx.lineWidth = 0.25;
+    // Simple line
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(mid.x, p1.y);
+    ctx.lineTo(mid.x, p2.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.closePath();
+}
+
 export class Rectangle {
     x1: number;
     y1: number;

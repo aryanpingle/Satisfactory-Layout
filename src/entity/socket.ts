@@ -85,6 +85,41 @@ export abstract class Socket extends Entity {
         ctx.fillRect(...rect.xywh());
     }
 
+    /**
+     * Disconnect this socket's connection to another socket (if any).
+     */
+    disconnect() {
+        if (this.ioType === "input") {
+            const inputSocket = this as SocketInput;
+
+            const outputSocket = inputSocket.input as SocketOutput;
+            if (outputSocket === undefined) return;
+
+            inputSocket.input = undefined;
+            outputSocket.output = undefined;
+        } else {
+            const outputSocket = this as SocketOutput;
+
+            const inputSocket = outputSocket.output as SocketInput;
+            if (inputSocket === undefined) return;
+
+            outputSocket.output = undefined;
+            inputSocket.input = undefined;
+        }
+    }
+
+    static connect(socket1: Socket, socket2: Socket) {
+        const [inputSocket, outputSocket] = Socket.sort(socket1, socket2);
+
+        // Remove their connections (if any)
+        inputSocket.disconnect();
+        outputSocket.disconnect();
+
+        // Connect them
+        outputSocket.output = inputSocket;
+        inputSocket.input = outputSocket;
+    }
+
     static sort(socket1: Socket, socket2: Socket) {
         if (socket1.ioType === socket2.ioType) {
             throw new Error(

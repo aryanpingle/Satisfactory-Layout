@@ -212,15 +212,9 @@ const myTransitionTable = {
 
             // Only connect sockets of different types
             if (firstSocket.ioType !== secondSocket.ioType) {
-                const [inputSocket, outputSocket] = Socket.sort(
-                    firstSocket,
-                    secondSocket,
-                );
+                Socket.connect(firstSocket, secondSocket);
 
-                // Connect 'em
-                outputSocket.output = inputSocket;
-                inputSocket.input = outputSocket;
-
+                // Transition to idle state
                 const idleState = StateFactory.createIdleState();
                 app.stateManager.transition(idleState);
 

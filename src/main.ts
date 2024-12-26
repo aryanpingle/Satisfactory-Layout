@@ -1,6 +1,6 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
-import { Rectangle, snap } from "./utils";
+import { drawConnectionLine, Rectangle, snap } from "./utils";
 import { Canvas } from "./canvas";
 import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
@@ -9,6 +9,7 @@ import { Colors, FOUNDATION_SIZE, SOCKET_ENTITY_NAME } from "./constants";
 import { Constructor } from "./entity/constructor";
 import { Supply } from "./entity/supply";
 import { Socket } from "./entity/socket";
+import { ConnectionState } from "./state";
 
 export class App {
     canvas: Canvas;
@@ -231,6 +232,13 @@ export class App {
             ctx.strokeRect(...selectionUnionXYWH);
         }
 
+        if (state.name === "connection") {
+            const connectionState = state as ConnectionState;
+            const p1 = connectionState.socket.getBoundingRect().getCenter();
+            const p2 = connectionState.mouseCoords;
+            drawConnectionLine(ctx, p1, p2);
+        }
+
         this.debugState();
     }
 
@@ -247,20 +255,13 @@ export class App {
             (socket) => socket.output !== undefined,
         );
 
-        ctx.strokeStyle = "goldenrod";
-        ctx.lineWidth = 0.25;
         connectedSockets.forEach((socket1) => {
             const socket2 = socket1.output as Socket;
 
             const p1 = socket1.getBoundingRect().getCenter();
             const p2 = socket2.getBoundingRect().getCenter();
 
-            // Simple line
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-            ctx.closePath();
+            drawConnectionLine(ctx, p1, p2);
         });
     }
 
