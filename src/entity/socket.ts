@@ -45,6 +45,15 @@ export abstract class Socket extends Entity {
         this.relativeAngle = params.relativeAngle ?? 0;
     }
 
+    override getBoundingRect(): Rectangle {
+        const construct = this.getConstruct();
+        return Rectangle.fromCenter(
+            construct.coords.add(this.coords),
+            this.width,
+            this.height,
+        );
+    }
+
     getConstruct(): IOConstruct {
         const noConstructError = new Error(``);
         if (this.ioType === "input") {
@@ -74,6 +83,18 @@ export abstract class Socket extends Entity {
             this.height,
         );
         ctx.fillRect(...rect.xywh());
+    }
+
+    static sort(socket1: Socket, socket2: Socket) {
+        if (socket1.ioType === socket2.ioType) {
+            throw new Error(
+                `Cannot sort sockets of the same type (ids: ${socket1.id}, ${socket2.id}).`,
+            );
+        }
+
+        const inputSocket = socket1.ioType === "input" ? socket1 : socket2;
+        const outputSocket = socket1.ioType === "output" ? socket1 : socket2;
+        return [inputSocket, outputSocket];
     }
 }
 

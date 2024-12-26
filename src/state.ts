@@ -1,5 +1,6 @@
 import Point from "@mapbox/point-geometry";
 import { EntityId } from "./entity/entity";
+import { Socket } from "./entity/socket";
 
 export type EventName =
     | "keypress"
@@ -58,6 +59,17 @@ export class StateFactory {
             previousState: currentState,
         };
     }
+
+    static createConnectionState(
+        socket: Socket,
+        mouseCoords: Point,
+    ): ConnectionState {
+        return {
+            name: "connection",
+            socket: socket,
+            mouseCoords: mouseCoords,
+        };
+    }
 }
 
 export interface IdleState {
@@ -88,11 +100,18 @@ export interface PanningState {
     previousState: State;
 }
 
+export interface ConnectionState {
+    name: "connection";
+    socket: Socket;
+    mouseCoords: Point;
+}
+
 export type State =
     | IdleState
     | SelectingState
     | SelectionState
     | RelocatingState
-    | PanningState;
+    | PanningState
+    | ConnectionState;
 
 export type StateName = State["name"];

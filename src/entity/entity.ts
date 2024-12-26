@@ -87,7 +87,7 @@ export class EntityManager {
     }
 
     getActiveEntities(): Entity[] {
-        return this.entities.filter((entity) => entity.attachment === false);
+        return this.entities;
     }
 
     getEntitiesContaining(point: Point): Entity[] {

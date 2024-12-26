@@ -86,6 +86,12 @@ export class Rectangle {
         return [this.x1, this.y1, this.x2 - this.x1, this.y2 - this.y1];
     }
 
+    getCenter(): Point {
+        const mx = (this.x1 + this.x2) / 2;
+        const my = (this.y1 + this.y2) / 2;
+        return new Point(mx, my);
+    }
+
     private selfUnion(rect: Rectangle): void {
         this.x1 = Math.min(this.x1, rect.x1);
         this.y1 = Math.min(this.y1, rect.y1);

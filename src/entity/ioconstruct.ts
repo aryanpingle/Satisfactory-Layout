@@ -1,5 +1,5 @@
 import Point from "@mapbox/point-geometry";
-import { Entity, EntityId, EntityManager } from "./entity";
+import { Entity, EntityManager } from "./entity";
 import { SocketInput, SocketOutput, SocketParams } from "./socket";
 import { Canvas } from "../canvas";
 

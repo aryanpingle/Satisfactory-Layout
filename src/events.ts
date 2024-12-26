@@ -1,6 +1,7 @@
 import Point from "@mapbox/point-geometry";
 import { type App } from "./main";
 import {
+    ConnectionState,
     IdleState,
     PanningState,
     RelocatingState,
@@ -11,12 +12,14 @@ import {
 import { StateManager, TransitionTable } from "./stateManager";
 import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
 import { EntityManager } from "./entity/entity";
+import { SOCKET_ENTITY_NAME } from "./constants";
+import { Socket } from "./entity/socket";
 
 const myTransitionTable = {
     idle: {
         // Left mouse button - selection state or move the clicked entity
         mousedown_lmb: (state: IdleState, event: MouseEvent, app: App) => {
-            selectionOrRelocation(event, app);
+            idleClick(event, app);
         },
         // Middle mouse button - panning state
         mousedown_mmb: (state: IdleState, event: MouseEvent, app: App) => {
@@ -47,8 +50,9 @@ const myTransitionTable = {
                 state.startCoords,
                 state.endCoords,
             );
-            const entitiesCaughtInSelection =
-                app.entityManager.getEntitiesIntersecting(selectionRect);
+            const entitiesCaughtInSelection = app.entityManager
+                .getEntitiesIntersecting(selectionRect)
+                .filter((entity) => entity.attachment === false);
 
             // Nothing in the selection box - transition to idle
             if (entitiesCaughtInSelection.length === 0) {
@@ -115,7 +119,7 @@ const myTransitionTable = {
             }
             // outside selection - transition to selecting
             else {
-                selectionOrRelocation(event, app);
+                idleClick(event, app);
             }
         },
         mousedown_mmb: (state: SelectionState, event: MouseEvent, app: App) => {
@@ -185,6 +189,70 @@ const myTransitionTable = {
             simpleZoom(event, app);
         },
     },
+    connection: {
+        mousedown_lmb: (
+            state: ConnectionState,
+            event: MouseEvent,
+            app: App,
+        ) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+            const entities =
+                app.entityManager.getEntitiesContaining(mouseWorldCoords);
+
+            // No entities clicked
+            if (entities.length === 0) return;
+            const topmost = entities[entities.length - 1];
+
+            // No sockets clicked
+            if (topmost.name !== SOCKET_ENTITY_NAME) return;
+
+            const firstSocket = topmost as Socket;
+            const secondSocket = state.socket;
+
+            // Only connect sockets of different types
+            if (firstSocket.ioType !== secondSocket.ioType) {
+                const [inputSocket, outputSocket] = Socket.sort(
+                    firstSocket,
+                    secondSocket,
+                );
+
+                // Connect 'em
+                outputSocket.output = inputSocket;
+                inputSocket.input = outputSocket;
+
+                const idleState = StateFactory.createIdleState();
+                app.stateManager.transition(idleState);
+
+                app.render();
+            }
+        },
+        mousedown_mmb: (
+            state: ConnectionState,
+            event: MouseEvent,
+            app: App,
+        ) => {
+            const idleState = StateFactory.createIdleState();
+            app.stateManager.transition(idleState);
+
+            app.render();
+        },
+        mousemove: (state: ConnectionState, event: MouseEvent, app: App) => {
+            const mouseCoords = mouseCoordsAsPoint(event);
+            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+
+            // Update the state
+            state.mouseCoords = mouseWorldCoords;
+
+            app.render();
+        },
+        scroll: (state: ConnectionState, event: WheelEvent, app: App) => {
+            simpleScroll(event, app);
+        },
+        zoom: (state: ConnectionState, event: WheelEvent, app: App) => {
+            simpleZoom(event, app);
+        },
+    },
 } as TransitionTable;
 
 // --- Common Functions
@@ -193,10 +261,6 @@ export function simpleScroll(event: WheelEvent, app: App) {
     // Translation
     const translationPx = new Point(-event.deltaX, -event.deltaY);
     app.translateBy(translationPx);
-
-    // Prevent the browser's default zoom action
-    event.preventDefault();
-    event.stopPropagation();
 }
 
 export function simpleZoom(event: WheelEvent, app: App) {
@@ -206,29 +270,38 @@ export function simpleZoom(event: WheelEvent, app: App) {
     const newScale = app.scale * Math.exp(delta * ZOOM_INTENSITY);
     const canvasPoint = new Point(event.offsetX, event.offsetY);
     app.scaleFromPoint(newScale, canvasPoint);
-
-    // Prevent the browser's default zoom action
-    event.preventDefault();
-    event.stopPropagation();
 }
 
 /**
- * In any state, handles a mousedown_lmb event on the canvas or some entity.
+ * In any state, handles a general mousedown_lmb event on the canvas or some entity.
  */
-export function selectionOrRelocation(event: MouseEvent, app: App) {
+export function idleClick(event: MouseEvent, app: App) {
     const mouseCoords = mouseCoordsAsPoint(event);
     const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
 
-    const e = app.entityManager.getEntitiesContaining(mouseWorldCoords);
+    const entities = app.entityManager.getEntitiesContaining(mouseWorldCoords);
+    console.log(entities);
     // No entities contain the mouse point
-    if (e.length === 0) {
+    if (entities.length === 0) {
         const selectingState =
             StateFactory.createSelectingState(mouseWorldCoords);
         app.stateManager.transition(selectingState);
     }
+    // Clicked on a socket, go into connection mode
+    else if (entities[entities.length - 1].name === SOCKET_ENTITY_NAME) {
+        const socket = entities[entities.length - 1] as Socket;
+
+        const connectionState = StateFactory.createConnectionState(
+            socket,
+            mouseWorldCoords,
+        );
+        app.stateManager.transition(connectionState);
+
+        app.render();
+    }
     // Move the topmost entity containing the mouse point
     else {
-        const topmost = e[e.length - 1];
+        const topmost = entities[entities.length - 1];
         const relocatingState = StateFactory.createRelocatingState(
             [topmost.id],
             [topmost.coords],
@@ -300,5 +373,9 @@ export function setupStateManagement(app: App) {
         } else {
             app.stateManager.triggerEvent("scroll", event, app);
         }
+
+        // Prevent the browser's default wheel action
+        event.preventDefault();
+        event.stopPropagation();
     });
 }

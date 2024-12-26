@@ -5,9 +5,10 @@ import { Canvas } from "./canvas";
 import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
 import { setupStateManagement } from "./events";
-import { Colors, FOUNDATION_SIZE } from "./constants";
+import { Colors, FOUNDATION_SIZE, SOCKET_ENTITY_NAME } from "./constants";
 import { Constructor } from "./entity/constructor";
 import { Supply } from "./entity/supply";
+import { Socket } from "./entity/socket";
 
 export class App {
     canvas: Canvas;
@@ -39,7 +40,9 @@ export class App {
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
         const c = new Constructor(this.entityManager);
+        c.coords = new Point(+8, 0);
         const s = new Supply(this.entityManager);
+        s.coords = new Point(-8, 0);
     }
 
     /**
@@ -177,10 +180,15 @@ export class App {
         /** Background grid */
         this.drawGrid();
 
+        this.drawConnections();
+
         /** Render entities */
-        this.entityManager.getActiveEntities().forEach((entity) => {
-            entity.render(this.canvas);
-        });
+        this.entityManager
+            .getActiveEntities()
+            .filter((entity) => entity.attachment === false)
+            .forEach((entity) => {
+                entity.render(this.canvas);
+            });
 
         // DEBUG: Checking if selection state works fine
         const ctx = this.canvas.ctx;
@@ -195,8 +203,9 @@ export class App {
                 state.startCoords,
                 state.endCoords,
             );
-            const entitiesCaughtInSelection =
-                app.entityManager.getEntitiesIntersecting(selectionRect);
+            const entitiesCaughtInSelection = app.entityManager
+                .getEntitiesIntersecting(selectionRect)
+                .filter((entity) => entity.attachment === false);
 
             entitiesCaughtInSelection.forEach((entity) => {
                 const rectCoords = entity.getBoundingRect().xywh();
@@ -223,6 +232,36 @@ export class App {
         }
 
         this.debugState();
+    }
+
+    drawConnections() {
+        const ctx = this.canvas.ctx;
+
+        const sockets = this.entityManager
+            .getActiveEntities()
+            .filter((entity) => entity.name === SOCKET_ENTITY_NAME) as Socket[];
+        const outputSockets = sockets.filter(
+            (socket) => socket.ioType === "output",
+        );
+        const connectedSockets = outputSockets.filter(
+            (socket) => socket.output !== undefined,
+        );
+
+        ctx.strokeStyle = "goldenrod";
+        ctx.lineWidth = 0.25;
+        connectedSockets.forEach((socket1) => {
+            const socket2 = socket1.output as Socket;
+
+            const p1 = socket1.getBoundingRect().getCenter();
+            const p2 = socket2.getBoundingRect().getCenter();
+
+            // Simple line
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.closePath();
+        });
     }
 
     debugState() {
