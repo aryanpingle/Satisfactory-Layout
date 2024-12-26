@@ -1,5 +1,5 @@
 import { Canvas } from "../canvas";
-import { Entity, EntityManager, EntityName } from "../entity";
+import { Entity, EntityManager, EntityName } from "./entity";
 
 export interface TestEntityParams {
     manager: EntityManager;
@@ -7,7 +7,7 @@ export interface TestEntityParams {
 
 export class TestEntity extends Entity {
     name: EntityName = "TestEntity";
-    moveable: boolean = true;
+    attachment: boolean = false;
     width: number = 8;
     height: number = 8;
 

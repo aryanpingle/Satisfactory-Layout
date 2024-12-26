@@ -1,5 +1,5 @@
 import Point from "@mapbox/point-geometry";
-import { EntityId } from "./entity";
+import { EntityId } from "./entity/entity";
 
 export type EventName =
     | "mousedown_lmb"

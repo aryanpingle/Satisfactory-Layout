@@ -10,7 +10,7 @@ import {
 } from "./state";
 import { StateManager, TransitionTable } from "./stateManager";
 import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
-import { EntityManager } from "./entity";
+import { EntityManager } from "./entity/entity";
 
 const myTransitionTable = {
     idle: {
