@@ -30,7 +30,7 @@ export abstract class Socket extends Entity {
     /** Angle of the socket relative to its East-facing construct. */
     relativeAngle: number;
     /** Id of the part flowing through the socket. */
-    partId: PartId | null = null;
+    partId?: PartId;
     // TODO: Use the Fraction class
     flow: number = 0;
 

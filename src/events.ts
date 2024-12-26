@@ -14,12 +14,9 @@ import { EntityManager } from "./entity/entity";
 
 const myTransitionTable = {
     idle: {
+        // Left mouse button - selection state or move the clicked entity
         mousedown_lmb: (state: IdleState, event: MouseEvent, app: App) => {
-            const mouseCoords = mouseCoordsAsPoint(event);
-            const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
-            const selectingState =
-                StateFactory.createSelectingState(mouseWorldCoords);
-            app.stateManager.transition(selectingState);
+            selectionOrRelocation(event, app);
         },
         // Middle mouse button - panning state
         mousedown_mmb: (state: IdleState, event: MouseEvent, app: App) => {
@@ -118,10 +115,7 @@ const myTransitionTable = {
             }
             // outside selection - transition to selecting
             else {
-                const selectingState =
-                    StateFactory.createSelectingState(mouseWorldCoords);
-                app.stateManager.transition(selectingState);
-                app.render();
+                selectionOrRelocation(event, app);
             }
         },
         mousedown_mmb: (state: SelectionState, event: MouseEvent, app: App) => {
@@ -217,6 +211,35 @@ export function simpleZoom(event: WheelEvent, app: App) {
     event.preventDefault();
     event.stopPropagation();
 }
+
+/**
+ * In any state, handles a mousedown_lmb event on the canvas or some entity.
+ */
+export function selectionOrRelocation(event: MouseEvent, app: App) {
+    const mouseCoords = mouseCoordsAsPoint(event);
+    const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
+
+    const e = app.entityManager.getEntitiesContaining(mouseWorldCoords);
+    // No entities contain the mouse point
+    if (e.length === 0) {
+        const selectingState =
+            StateFactory.createSelectingState(mouseWorldCoords);
+        app.stateManager.transition(selectingState);
+    }
+    // Move the topmost entity containing the mouse point
+    else {
+        const topmost = e[e.length - 1];
+        const relocatingState = StateFactory.createRelocatingState(
+            [topmost.id],
+            [topmost.coords],
+            mouseWorldCoords,
+        );
+        app.stateManager.transition(relocatingState);
+        app.render();
+    }
+}
+
+// --- Setting up state management for the app object
 
 export function setupStateManagement(app: App) {
     // Set up state manager
