@@ -10,6 +10,7 @@ import { Constructor } from "./entity/constructor";
 import { Supply } from "./entity/supply";
 import { Socket } from "./entity/socket";
 import { ConnectionState } from "./state";
+import { SatisfactoryGraph } from "./graph";
 
 export class App {
     canvas: Canvas;
@@ -38,12 +39,25 @@ export class App {
             this.canvas.height / 2,
         );
 
+        this.loadTest();
+    }
+
+    loadTest() {
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
-        const c = new Constructor(this.entityManager);
-        c.coords = new Point(+8, 0);
+
+        // Supply
         const s = new Supply(this.entityManager);
         s.coords = new Point(-8, 0);
+
+        // Constructor
+        const c = new Constructor(this.entityManager);
+        c.coords = new Point(+8, 0);
+
+        Socket.connect(c.inputs[0], s.outputs[0]);
+
+        const graph = new SatisfactoryGraph(this.entityManager);
+        graph.balance(0);
     }
 
     /**

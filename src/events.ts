@@ -14,9 +14,17 @@ import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
 import { EntityManager } from "./entity/entity";
 import { SOCKET_ENTITY_NAME } from "./constants";
 import { Socket } from "./entity/socket";
+import { SatisfactoryGraph } from "./graph";
 
 const myTransitionTable = {
     idle: {
+        keypress: (state: IdleState, event: KeyboardEvent, app: App) => {
+            const key = event.key;
+
+            if (key === " ") {
+                const graph = new SatisfactoryGraph(app.entityManager);
+            }
+        },
         // Left mouse button - selection state or move the clicked entity
         mousedown_lmb: (state: IdleState, event: MouseEvent, app: App) => {
             idleClick(event, app);
@@ -147,7 +155,7 @@ const myTransitionTable = {
                 state.selectedIds,
             );
             const displacement = mouseWorldCoords.sub(state.startMouseCoords);
-            const snappedDisplacement = modPoint(displacement, 2);
+            const snappedDisplacement = modPoint(displacement, 1);
             selectedEntities.forEach((entity, index) => {
                 entity.coords =
                     state.selectedEntityCoords[index].add(snappedDisplacement);

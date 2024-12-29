@@ -1,13 +1,14 @@
 import DATABASE from "./data1.0.json";
+import {
+    BuildingId,
+    BuildingInfo,
+    PartId,
+    PartInfo,
+    RecipeId,
+    RecipeInfo,
+} from "./database-types";
 
-export type PartId = keyof typeof DATABASE.items;
-export type PartInfo = (typeof DATABASE.items)[PartId];
-
-export type RecipeId = keyof typeof DATABASE.recipes;
-export type RecipeInfo = (typeof DATABASE.recipes)[RecipeId];
-
-export type BuildingId = keyof typeof DATABASE.buildings;
-export type BuildingInfo = (typeof DATABASE.buildings)[BuildingId];
+export type PartFlowDict = Partial<Record<PartId, number>>;
 
 export namespace Database {
     export function getPartInfo(partId: PartId): PartInfo {
@@ -47,5 +48,23 @@ export namespace Database {
      */
     export function isFluid(partId: PartId) {
         return !isSolid(partId);
+    }
+
+    export function getProductPFD(recipe: RecipeInfo): PartFlowDict {
+        const duration = recipe.time;
+        const entries = recipe.products.map((o) => [
+            o.item,
+            (o.amount * 60) / duration,
+        ]);
+        return Object.fromEntries(entries);
+    }
+
+    export function getIngredientPFD(recipe: RecipeInfo): PartFlowDict {
+        const duration = recipe.time;
+        const entries = recipe.ingredients.map((o) => [
+            o.item,
+            (o.amount * 60) / duration,
+        ]);
+        return Object.fromEntries(entries);
     }
 }

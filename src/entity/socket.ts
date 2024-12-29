@@ -1,6 +1,6 @@
 import { Canvas } from "../canvas";
-import { Colors } from "../constants";
-import { PartId } from "../dataset";
+import { Colors, INFINITE_FLOW } from "../constants";
+import { PartId } from "../database-types";
 import { Rectangle } from "../utils";
 import { Entity, EntityManager } from "./entity";
 import { IOConstruct } from "./ioconstruct";
@@ -33,6 +33,7 @@ export abstract class Socket extends Entity {
     partId?: PartId;
     // TODO: Use the Fraction class
     flow: number = 0;
+    maxPermitted: number = INFINITE_FLOW;
 
     abstract ioType: SocketIOType;
 
@@ -90,7 +91,7 @@ export abstract class Socket extends Entity {
      */
     disconnect() {
         if (this.ioType === "input") {
-            const inputSocket = this as SocketInput;
+            const inputSocket = this as any as SocketInput;
 
             const outputSocket = inputSocket.input as SocketOutput;
             if (outputSocket === undefined) return;
@@ -120,7 +121,7 @@ export abstract class Socket extends Entity {
         inputSocket.input = outputSocket;
     }
 
-    static sort(socket1: Socket, socket2: Socket) {
+    static sort(socket1: Socket, socket2: Socket): [SocketInput, SocketOutput] {
         if (socket1.ioType === socket2.ioType) {
             throw new Error(
                 `Cannot sort sockets of the same type (ids: ${socket1.id}, ${socket2.id}).`,
@@ -129,23 +130,42 @@ export abstract class Socket extends Entity {
 
         const inputSocket = socket1.ioType === "input" ? socket1 : socket2;
         const outputSocket = socket1.ioType === "output" ? socket1 : socket2;
-        return [inputSocket, outputSocket];
+        return [inputSocket, outputSocket] as any;
     }
 }
 
 export class SocketInput extends Socket {
     ioType: SocketIOType = "input";
 
+    input?: SocketOutput;
+    output: IOConstruct;
+
     constructor(manager: EntityManager, params: SocketParams) {
         super(manager, params);
+
+        this.input = params.input as any;
+        this.output = params.output as any;
+    }
+
+    setMaxPermitted(maxPermitted: number) {
+        this.maxPermitted = maxPermitted;
+
+        if (this.input === undefined) return;
+        this.input.maxPermitted = maxPermitted;
     }
 }
 
 export class SocketOutput extends Socket {
     ioType: SocketIOType = "output";
 
+    input: IOConstruct;
+    output?: SocketInput;
+
     constructor(manager: EntityManager, params: SocketParams) {
         super(manager, params);
+
+        this.input = params.input as any;
+        this.output = params.output as any;
     }
 }
 
