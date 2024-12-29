@@ -91,11 +91,10 @@ export abstract class IOConstruct extends Entity {
     }
 
     render(canvas: Canvas) {
+        this.renderConstruct(canvas);
         // Render sockets
         this.inputs.forEach((socket) => socket.render(canvas));
         this.outputs.forEach((socket) => socket.render(canvas));
-
-        this.renderConstruct(canvas);
     }
 
     abstract getOperatingInformation(): Object;

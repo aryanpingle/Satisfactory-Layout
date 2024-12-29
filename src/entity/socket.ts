@@ -77,13 +77,16 @@ export abstract class Socket extends Entity {
         } else {
             ctx.fillStyle = Colors.alignGreen.string();
         }
-        const construct = this.getConstruct();
-        const rect = Rectangle.fromCenter(
-            construct.coords.add(this.coords),
-            this.width,
-            this.height,
-        );
+
+        const rect = this.getBoundingRect();
         ctx.fillRect(...rect.xywh());
+
+        if (this.partId !== undefined) {
+            const center = rect.getCenter();
+            ctx.font = "normal 0.5px monospace";
+            ctx.fillStyle = "black";
+            ctx.fillText(String(this.flow), center.x, center.y);
+        }
     }
 
     /**

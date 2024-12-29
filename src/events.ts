@@ -14,7 +14,6 @@ import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
 import { EntityManager } from "./entity/entity";
 import { SOCKET_ENTITY_NAME } from "./constants";
 import { Socket } from "./entity/socket";
-import { SatisfactoryGraph } from "./graph";
 
 const myTransitionTable = {
     idle: {
@@ -23,6 +22,7 @@ const myTransitionTable = {
 
             if (key === " ") {
                 app.graph.balance(1);
+                app.render();
             }
         },
         // Left mouse button - selection state or move the clicked entity
