@@ -22,7 +22,7 @@ const myTransitionTable = {
             const key = event.key;
 
             if (key === " ") {
-                const graph = new SatisfactoryGraph(app.entityManager);
+                app.graph.balance(1);
             }
         },
         // Left mouse button - selection state or move the clicked entity
@@ -282,7 +282,6 @@ export function idleClick(event: MouseEvent, app: App) {
     const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
 
     const entities = app.entityManager.getEntitiesContaining(mouseWorldCoords);
-    console.log(entities);
     // No entities contain the mouse point
     if (entities.length === 0) {
         const selectingState =

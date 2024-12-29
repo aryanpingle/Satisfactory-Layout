@@ -13,7 +13,6 @@ export abstract class Machine extends IOConstruct {
     setRecipe(recipeId: RecipeId) {
         this.recipeId = recipeId;
         this.recipe = Database.getRecipeInfo(recipeId);
-        this.assignPartsToOutputs();
     }
 
     private ensureRecipeExists() {
@@ -31,8 +30,9 @@ export abstract class Machine extends IOConstruct {
         return Database.getIngredientPFD(recipe);
     }
 
-    private assignPartsToOutputs(): void {
-        // there will be max 2 outputs, a liquid and solid
+    assignSocketParts(): void {
+        this.ensureRecipeExists();
+
         const recipe = this.recipe!;
         const products = recipe.products;
 
@@ -84,8 +84,7 @@ export abstract class Machine extends IOConstruct {
          *    based on the recipe
          * 3. The machine will be operating at
          *    efficiency = min(maxPermittedEfficiency, minInputRatio)
-         * 4. Based on this efficiency, set the maxPermitted variables of the
-         *    input sockets
+         * 4. For all non-bottleneck inputs, set the `maxPermitted` variable
          */
 
         // Step 1
@@ -103,10 +102,6 @@ export abstract class Machine extends IOConstruct {
 
             inputActualPartFlowDict[partId] = s.flow;
         });
-        console.log(
-            `[${this.id}] Receiving partFlowDict`,
-            inputActualPartFlowDict,
-        );
 
         const inputMaxPartFlowDict = this.getMaxTheoreticalInputFlows();
         const inputRatios = (Object.keys(inputMaxPartFlowDict) as PartId[]).map(
@@ -131,7 +126,20 @@ export abstract class Machine extends IOConstruct {
 
             const maxPermitted =
                 actualEfficiency * inputMaxPartFlowDict[partId]!;
-            s.setMaxPermitted(maxPermitted);
+
+            const ratio =
+                inputActualPartFlowDict[partId]! /
+                inputMaxPartFlowDict[partId]!;
+
+            // if this is the bottleneck, there should be no maximum limit here
+            if (ratio === actualEfficiency) {
+                // this.debug(s);
+                s.setMaxPermitted(inputMaxPartFlowDict[partId]!);
+            }
+            // if not, then set a maximum limit (this enables manifolds to work)
+            else {
+                s.setMaxPermitted(maxPermitted);
+            }
         });
 
         // Actual balancing
@@ -140,7 +148,24 @@ export abstract class Machine extends IOConstruct {
             o[key as PartId]! *= actualEfficiency;
         }
         this.outputs.forEach((s) => {
-            s.flow = o[s.partId as PartId]!;
+            const socketPart = s.partId!;
+            s.propagate(socketPart, o[socketPart]!);
         });
+    }
+
+    getOperatingInformation(): Object {
+        const inputPFD = this.getInputPFD();
+        const outputPFD = this.getOutputPFD();
+
+        return {
+            id: this.id,
+            name: this.constructName,
+            recipeId: this.recipeId,
+            recipe: this.recipe,
+            inputs: this.inputs,
+            inputPFD: inputPFD,
+            outputs: this.outputs,
+            outputPFD: outputPFD,
+        };
     }
 }

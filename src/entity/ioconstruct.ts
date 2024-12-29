@@ -1,8 +1,9 @@
 import Point from "@mapbox/point-geometry";
 import { Entity, EntityManager } from "./entity";
-import { SocketInput, SocketOutput, SocketParams } from "./socket";
+import { Socket, SocketInput, SocketOutput, SocketParams } from "./socket";
 import { Canvas } from "../canvas";
 import { IOCONSTRUCT_ENTITY_NAME } from "../constants";
+import { PartFlowDict } from "../database";
 
 export interface SocketConfig extends SocketParams {
     coords: Point;
@@ -64,6 +65,31 @@ export abstract class IOConstruct extends Entity {
      */
     abstract balance(): void;
 
+    /**
+     * Preparatory step to assign a part id to any input or output sockets, if applicable.
+     *
+     * Will be called on all IOConstruct objects once before one or more balance() calls.
+     */
+    abstract assignSocketParts(): void;
+
+    private _getPFDFromSockets(sockets: Socket[]): PartFlowDict {
+        const pfd: PartFlowDict = {};
+        sockets.forEach((s) => {
+            if (s.partId === undefined) return;
+            if (!(s.partId in pfd)) pfd[s.partId] = 0;
+            pfd[s.partId] = s.flow;
+        });
+        return pfd;
+    }
+
+    getInputPFD(): PartFlowDict {
+        return this._getPFDFromSockets(this.inputs);
+    }
+
+    getOutputPFD(): PartFlowDict {
+        return this._getPFDFromSockets(this.outputs);
+    }
+
     render(canvas: Canvas) {
         // Render sockets
         this.inputs.forEach((socket) => socket.render(canvas));
@@ -71,4 +97,6 @@ export abstract class IOConstruct extends Entity {
 
         this.renderConstruct(canvas);
     }
+
+    abstract getOperatingInformation(): Object;
 }

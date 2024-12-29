@@ -17,22 +17,30 @@ import { IOConstruct } from "./entity/ioconstruct";
  */
 
 export class SatisfactoryGraph {
-    constructs: IOConstruct[];
+    manager: EntityManager;
+    constructs: IOConstruct[] = [];
 
     constructor(manager: EntityManager) {
-        const entities = manager.getActiveEntities();
+        this.manager = manager;
+    }
 
+    initializeConstructs() {
+        const entities = this.manager.getActiveEntities();
         this.constructs = entities.filter(
             (entity) => entity.name === IOCONSTRUCT_ENTITY_NAME,
         ) as IOConstruct[];
+
+        this.constructs.forEach((construct) => construct.assignSocketParts());
     }
 
     balance(iterations: number) {
         console.log("SatisfactoryGraph: Balancing");
+
         for (let i = 0; i < iterations; ++i) {
             this.constructs.forEach((construct) => construct.balance());
         }
 
-        console.log(this.constructs);
+        const info = this.constructs.map((c) => c.getOperatingInformation());
+        console.log(info);
     }
 }

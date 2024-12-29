@@ -33,7 +33,7 @@ export abstract class Socket extends Entity {
     partId?: PartId;
     // TODO: Use the Fraction class
     flow: number = 0;
-    maxPermitted: number = INFINITE_FLOW;
+    maxPermitted: number = Number.POSITIVE_INFINITY;
 
     abstract ioType: SocketIOType;
 
@@ -99,7 +99,7 @@ export abstract class Socket extends Entity {
             inputSocket.input = undefined;
             outputSocket.output = undefined;
         } else {
-            const outputSocket = this as SocketOutput;
+            const outputSocket = this as any as SocketOutput;
 
             const inputSocket = outputSocket.output as SocketInput;
             if (inputSocket === undefined) return;
@@ -108,6 +108,8 @@ export abstract class Socket extends Entity {
             inputSocket.input = undefined;
         }
     }
+
+    // --- Static methods
 
     static connect(socket1: Socket, socket2: Socket) {
         const [inputSocket, outputSocket] = Socket.sort(socket1, socket2);
@@ -166,6 +168,17 @@ export class SocketOutput extends Socket {
 
         this.input = params.input as any;
         this.output = params.output as any;
+    }
+
+    propagate(partId: PartId | undefined, flow: number) {
+        this.partId = partId;
+        this.flow = flow;
+
+        const next = this.output;
+        if (next === undefined) return;
+
+        next.partId = this.partId;
+        next.flow = this.flow;
     }
 }
 

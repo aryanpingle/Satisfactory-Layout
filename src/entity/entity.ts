@@ -39,6 +39,10 @@ export abstract class Entity {
      */
     abstract render(canvas: Canvas): void;
 
+    debug(...data: any[]) {
+        console.log(`Entity [${this.id}]:`, ...data);
+    }
+
     getBoundingRect(): Rectangle {
         return Rectangle.fromCenter(this.coords, this.width, this.height);
     }

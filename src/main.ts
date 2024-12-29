@@ -11,12 +11,14 @@ import { Supply } from "./entity/supply";
 import { Socket } from "./entity/socket";
 import { ConnectionState } from "./state";
 import { SatisfactoryGraph } from "./graph";
+import { Splitter } from "./entity/splitter";
 
 export class App {
     canvas: Canvas;
     // Will be initialized in events.ts
     stateManager: StateManager = null as any;
     entityManager: EntityManager;
+    graph: SatisfactoryGraph;
 
     // Ensures that 750px on the canvas = 10 foundations = 80m
     scale: number = 750 / 10 / FOUNDATION_SIZE;
@@ -32,6 +34,7 @@ export class App {
         setupStateManagement(this);
 
         this.entityManager = new EntityManager();
+        this.graph = new SatisfactoryGraph(this.entityManager);
 
         // Center the world-space (0, 0) in the canvas
         this.translation = new Point(
@@ -47,17 +50,58 @@ export class App {
         // TODO: BRUH put this shit in the EntityManager or smth
 
         // Supply
-        const s = new Supply(this.entityManager);
-        s.coords = new Point(-8, 0);
+        const supply = new Supply(this.entityManager);
+        supply.partId = "Desc_OreIron_C";
+        supply.flow = 90;
+        supply.coords = new Point(-8, 0);
 
-        // Constructor
-        const c = new Constructor(this.entityManager);
-        c.coords = new Point(+8, 0);
+        // Manifold system
 
-        Socket.connect(c.inputs[0], s.outputs[0]);
+        // Splitter 1
+        const splitter1 = new Splitter(this.entityManager);
+        splitter1.coords = new Point(+2, 0);
+        // Constructor 1
+        const constructor1 = new Constructor(this.entityManager);
+        constructor1.setRecipe("Recipe_IngotIron_C");
+        constructor1.coords = new Point(+16, 0);
+        Socket.connect(splitter1.outputs[1], constructor1.inputs[0]);
 
-        const graph = new SatisfactoryGraph(this.entityManager);
-        graph.balance(0);
+        // Splitter 2
+        const splitter2 = new Splitter(this.entityManager);
+        splitter2.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -1);
+        // Constructor 2
+        const constructor2 = new Constructor(this.entityManager);
+        constructor2.setRecipe("Recipe_IngotIron_C");
+        constructor2.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -1);
+        Socket.connect(splitter2.outputs[1], constructor2.inputs[0]);
+
+        // Splitter 3
+        const splitter3 = new Splitter(this.entityManager);
+        splitter3.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -2);
+        // Constructor 3
+        const constructor3 = new Constructor(this.entityManager);
+        constructor3.setRecipe("Recipe_IngotIron_C");
+        constructor3.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -2);
+        Socket.connect(splitter3.outputs[1], constructor3.inputs[0]);
+
+        // Splitter 4
+        const splitter4 = new Splitter(this.entityManager);
+        splitter4.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -3);
+        // Constructor 4
+        const constructor4 = new Constructor(this.entityManager);
+        constructor4.setRecipe("Recipe_IngotIron_C");
+        constructor4.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -3);
+        Socket.connect(splitter4.outputs[1], constructor4.inputs[0]);
+
+        Socket.connect(splitter1.outputs[0], splitter2.inputs[0]);
+        Socket.connect(splitter2.outputs[0], splitter3.inputs[0]);
+        Socket.connect(splitter3.outputs[0], splitter4.inputs[0]);
+
+        Socket.connect(supply.outputs[0], splitter1.inputs[0]);
+
+        this.graph.initializeConstructs();
+
+        this.graph.balance(1);
     }
 
     /**

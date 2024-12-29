@@ -25,17 +25,19 @@ export class Supply extends IOConstruct {
         super(manager, [], socketOutputConfigs);
     }
 
-    balance(): void {
+    assignSocketParts(): void {
         if (this.partId === undefined)
             throw new Error(
                 `'partId' has not been set for Supply [${this.id}].`,
             );
 
-        const partId = this.partId;
+        this.outputs[0].propagate(this.partId, this.flow);
+    }
 
+    balance(): void {
+        const partId = this.partId;
         const outputSocket = this.outputs[0];
-        outputSocket.partId = partId;
-        outputSocket.flow = this.flow;
+        outputSocket.propagate(partId, this.flow);
     }
 
     renderConstruct(canvas: Canvas): void {
@@ -43,5 +45,14 @@ export class Supply extends IOConstruct {
 
         ctx.fillStyle = "deepskyblue";
         fillCircle(ctx, this.coords.x, this.coords.y, FOUNDATION_SIZE / 2);
+    }
+
+    getOperatingInformation(): Object {
+        return {
+            id: this.id,
+            name: this.constructName,
+            partId: this.partId,
+            flow: this.flow,
+        };
     }
 }

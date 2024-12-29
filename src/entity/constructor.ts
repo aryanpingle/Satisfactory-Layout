@@ -2,7 +2,6 @@ import Point from "@mapbox/point-geometry";
 import { Canvas } from "../canvas";
 import { EntityManager } from "./entity";
 import { IOConstructParams } from "./ioconstruct";
-import { SOCKET_SIZE } from "../constants";
 import { Machine } from "./machine";
 
 const CONSTRUCTOR_WIDTH = 10;

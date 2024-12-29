@@ -40,7 +40,7 @@ export namespace Database {
      * Check whether a part is a solid.
      */
     export function isSolid(partId: PartId) {
-        return Database.getPartInfo(partId).liquid;
+        return !Database.getPartInfo(partId).liquid;
     }
 
     /**
