@@ -164,3 +164,8 @@ export class Rectangle {
         return r;
     }
 }
+
+export function getMsAndFPS(ms: number): string {
+    const fps = ms === 0 ? Number.POSITIVE_INFINITY : Math.ceil(1000 / ms);
+    return `${ms.toFixed(2)}ms (${fps} FPS)`;
+}

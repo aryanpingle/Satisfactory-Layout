@@ -34,13 +34,19 @@ export class SatisfactoryGraph {
     }
 
     balance(iterations: number) {
-        console.log("SatisfactoryGraph: Balancing");
+        const startTime = performance.now();
 
         for (let i = 0; i < iterations; ++i) {
             this.constructs.forEach((construct) => construct.balance());
         }
 
-        const info = this.constructs.map((c) => c.getOperatingInformation());
-        console.log(info);
+        const endTime = performance.now();
+        console.log(
+            `Balancing complete in %c${endTime - startTime}ms.`,
+            "background-color: white; color: black; font-weight: bold;",
+        );
+
+        // const info = this.constructs.map((c) => c.getOperatingInformation());
+        // console.log(info);
     }
 }

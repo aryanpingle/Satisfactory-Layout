@@ -1,6 +1,6 @@
 import "./style.css";
 import Point from "@mapbox/point-geometry";
-import { drawConnectionLine, Rectangle, snap } from "./utils";
+import { drawConnectionLine, getMsAndFPS, Rectangle, snap } from "./utils";
 import { Canvas } from "./canvas";
 import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
@@ -12,6 +12,7 @@ import { Socket } from "./entity/socket";
 import { ConnectionState } from "./state";
 import { SatisfactoryGraph } from "./graph";
 import { Splitter } from "./entity/splitter";
+import debounce from "debounce";
 
 export class App {
     canvas: Canvas;
@@ -42,10 +43,27 @@ export class App {
             this.canvas.height / 2,
         );
 
-        this.loadTest();
+        this.loadManifoldTest();
     }
 
     loadTest() {
+        for (let i = -50; i <= 50; ++i) {
+            for (let j = -50; j <= 50; ++j) {
+                const constructor = new Constructor(this.entityManager);
+                constructor.setRecipe("Recipe_IngotIron_C");
+                constructor.coords = new Point(
+                    2 * FOUNDATION_SIZE * i,
+                    2 * FOUNDATION_SIZE * j,
+                );
+            }
+        }
+
+        this.graph.initializeConstructs();
+
+        this.graph.balance(5);
+    }
+
+    loadManifoldTest() {
         // Load test entities
         // TODO: BRUH put this shit in the EntityManager or smth
 
@@ -101,7 +119,7 @@ export class App {
 
         this.graph.initializeConstructs();
 
-        this.graph.balance(1);
+        this.graph.balance(5);
     }
 
     /**
@@ -232,6 +250,12 @@ export class App {
     }
 
     render() {
+        debounce(this._render.bind(this), 1000 / 120, { immediate: true })();
+    }
+
+    private _render() {
+        const renderStartTime = performance.now();
+
         /** Reset the canvas */
         this.canvas.clear();
         this.setWorldSpaceTransform();
@@ -242,12 +266,19 @@ export class App {
         this.drawConnections();
 
         /** Render entities */
-        this.entityManager
-            .getActiveEntities()
-            .filter((entity) => entity.attachment === false)
-            .forEach((entity) => {
-                entity.render(this.canvas);
-            });
+        const worldTopLeft = this.canvasPointToWorldPoint(new Point(0, 0));
+        const worldBottomRight = this.canvasPointToWorldPoint(
+            new Point(this.canvas.width, this.canvas.height),
+        );
+        const visibleRect = Rectangle.fromTwoPoints(
+            worldTopLeft,
+            worldBottomRight,
+        );
+        this.entityManager.getActiveEntities().forEach((entity) => {
+            if (entity.attachment === true) return;
+            if (!entity.getBoundingRect().intersects(visibleRect)) return;
+            entity.render(this.canvas);
+        });
 
         // DEBUG: Checking if selection state works fine
         const ctx = this.canvas.ctx;
@@ -297,7 +328,13 @@ export class App {
             drawConnectionLine(ctx, p1, p2);
         }
 
-        this.debugState();
+        const renderEndTime = performance.now();
+        const renderDuration = renderEndTime - renderStartTime;
+
+        this.renderDebug(
+            this.stateManager.currentState.name,
+            "Render: " + getMsAndFPS(renderDuration),
+        );
     }
 
     drawConnections() {
@@ -323,16 +360,32 @@ export class App {
         });
     }
 
-    debugState() {
+    renderDebug(...data: string[]) {
         const ctx = this.canvas.ctx;
         ctx.setTransform(1, 0, 0, 1, 0, 0); // identity matrix
+
+        // Debug
         ctx.font = "bold 20px monospace";
-        ctx.fillStyle = "crimson";
-        ctx.fillText(
-            this.stateManager.currentState.name,
-            this.canvas.width / 2,
-            20,
+        ctx.textAlign = "left";
+        ctx.textBaseline = "hanging";
+
+        // Calculate dimensions of the debug box
+        const debugBoxHeight = data.length * 20 + 20;
+        const maxLineWidth = Math.max(
+            ...data.map((line) => ctx.measureText(line).width),
         );
+        const debugBoxWidth = maxLineWidth + 20;
+
+        // Draw the debug box
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, debugBoxWidth, debugBoxHeight);
+
+        ctx.fillStyle = Colors.ficsitOrange.string();
+
+        // Actually render the strings
+        for (let i = 0; i < data.length; ++i) {
+            ctx.fillText(data[i], 10, (i + 0.5) * 20);
+        }
     }
 }
 

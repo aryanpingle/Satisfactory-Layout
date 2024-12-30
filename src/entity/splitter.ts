@@ -97,11 +97,15 @@ export class Splitter extends IOConstruct {
             }
         }
 
-        this.debug(
-            `Balanced in ${iterCount} iterations: ${
-                this.input.flow
-            } -> ${this.outputs.map((s) => s.flow)}`,
-        );
+        if (iterCount > 3) {
+            console.warn(
+                `Socket [${
+                    this.id
+                }] balancing took ${iterCount} iterations - ${this.outputs.map(
+                    (s) => s.flow,
+                )}.`,
+            );
+        }
 
         // If all the sockets are full (like at the end of a manifold)
         if (numSaturated === 3) {
