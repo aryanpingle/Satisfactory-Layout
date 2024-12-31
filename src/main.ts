@@ -6,13 +6,15 @@ import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
 import { setupStateManagement } from "./events";
 import { Colors, FOUNDATION_SIZE, SOCKET_ENTITY_NAME } from "./constants";
-import { Constructor } from "./entity/constructor";
+import { Constructor } from "./entity/machines";
 import { Supply } from "./entity/supply";
 import { Socket } from "./entity/socket";
 import { ConnectionState } from "./state";
 import { SatisfactoryGraph } from "./graph";
 import { Splitter } from "./entity/splitter";
 import debounce from "debounce";
+import { Merger } from "./entity/merger";
+import { Sink } from "./entity/sink";
 
 export class App {
     canvas: Canvas;
@@ -70,52 +72,59 @@ export class App {
         // Supply
         const supply = new Supply(this.entityManager);
         supply.partId = "Desc_OreIron_C";
-        supply.flow = 90;
-        supply.coords = new Point(-8, 0);
+        supply.flow = 120;
+        supply.coords = new Point(-3 * FOUNDATION_SIZE, 0);
 
         // Manifold system
 
-        // Splitter 1
-        const splitter1 = new Splitter(this.entityManager);
-        splitter1.coords = new Point(+2, 0);
-        // Constructor 1
-        const constructor1 = new Constructor(this.entityManager);
-        constructor1.setRecipe("Recipe_IngotIron_C");
-        constructor1.coords = new Point(+16, 0);
-        Socket.connect(splitter1.outputs[1], constructor1.inputs[0]);
+        const splitters = [];
+        const constructors = [];
+        const mergers = [];
+        for (let index = 0; index < 10; ++index) {
+            const y = -FOUNDATION_SIZE * index * 1;
 
-        // Splitter 2
-        const splitter2 = new Splitter(this.entityManager);
-        splitter2.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -1);
-        // Constructor 2
-        const constructor2 = new Constructor(this.entityManager);
-        constructor2.setRecipe("Recipe_IngotIron_C");
-        constructor2.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -1);
-        Socket.connect(splitter2.outputs[1], constructor2.inputs[0]);
+            // Splitter
+            const splitter = new Splitter(this.entityManager);
+            splitter.coords = new Point(-1.5 * FOUNDATION_SIZE, y);
+            splitters.push(splitter);
 
-        // Splitter 3
-        const splitter3 = new Splitter(this.entityManager);
-        splitter3.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -2);
-        // Constructor 3
-        const constructor3 = new Constructor(this.entityManager);
-        constructor3.setRecipe("Recipe_IngotIron_C");
-        constructor3.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -2);
-        Socket.connect(splitter3.outputs[1], constructor3.inputs[0]);
+            // Constructor
+            const constructor = new Constructor(this.entityManager);
+            constructor.setRecipe("Recipe_IngotIron_C");
+            constructor.coords = new Point(0, y);
+            constructors.push(constructor);
 
-        // Splitter 4
-        const splitter4 = new Splitter(this.entityManager);
-        splitter4.coords = new Point(+2, FOUNDATION_SIZE * 1.5 * -3);
-        // Constructor 4
-        const constructor4 = new Constructor(this.entityManager);
-        constructor4.setRecipe("Recipe_IngotIron_C");
-        constructor4.coords = new Point(+16, FOUNDATION_SIZE * 1.5 * -3);
-        Socket.connect(splitter4.outputs[1], constructor4.inputs[0]);
+            // Connect splitter to constructor
+            Socket.connect(splitter.outputs[1], constructor.inputs[0]);
 
-        Socket.connect(splitter1.outputs[0], splitter2.inputs[0]);
-        Socket.connect(splitter2.outputs[0], splitter3.inputs[0]);
-        Socket.connect(splitter3.outputs[0], splitter4.inputs[0]);
+            // Merger
+            const merger = new Merger(this.entityManager);
+            merger.coords = new Point(+1.5 * FOUNDATION_SIZE, y);
+            mergers.push(merger);
 
-        Socket.connect(supply.outputs[0], splitter1.inputs[0]);
+            // Connect constructor to merger
+            Socket.connect(constructor.outputs[0], merger.inputs[1]);
+
+            if (index > 0) {
+                // Connect splitters
+                Socket.connect(
+                    splitters[index - 1].outputs[0],
+                    splitters[index].inputs[0],
+                );
+                // Connect mergers
+                Socket.connect(
+                    mergers[index].outputs[0],
+                    mergers[index - 1].inputs[0],
+                );
+            }
+        }
+
+        // Connect supply to first splitter
+        Socket.connect(supply.outputs[0], splitters[0].inputs[0]);
+
+        const sink = new Sink(this.entityManager);
+        sink.coords = new Point(+3 * FOUNDATION_SIZE, 0);
+        Socket.connect(mergers[0].outputs[0], sink.inputs[0]);
 
         this.graph.initializeConstructs();
 

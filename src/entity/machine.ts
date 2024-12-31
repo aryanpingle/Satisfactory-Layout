@@ -111,6 +111,8 @@ export abstract class Machine extends IOConstruct {
         );
 
         const minInputRatio = Math.min(...inputRatios);
+        if (Number.isNaN(minInputRatio))
+            console.log(inputMaxPartFlowDict, inputActualPartFlowDict);
 
         // Step 3
         const actualEfficiency = Math.min(

@@ -120,5 +120,3 @@ export class EntityManager {
         });
     }
 }
-
-// --- Entity Implementations

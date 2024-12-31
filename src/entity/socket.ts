@@ -85,7 +85,7 @@ export abstract class Socket extends Entity {
             const center = rect.getCenter();
             ctx.font = "normal 0.5px monospace";
             ctx.fillStyle = "black";
-            ctx.fillText(String(this.flow), center.x, center.y);
+            ctx.fillText(String(this.flow.toPrecision(4)), center.x, center.y);
         }
     }
 

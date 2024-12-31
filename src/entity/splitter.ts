@@ -55,8 +55,10 @@ export class Splitter extends IOConstruct {
     }
 
     balance(): void {
-        if (this.input.partId === undefined) return;
-        if (this.input.input === undefined) return;
+        if (this.input.input === undefined || this.input.partId === undefined) {
+            this.outputs.forEach((s) => s.propagate(undefined, 0));
+            return;
+        }
 
         // For all unconnected outputs, maxPermitted = 0
         this.outputs.forEach((s) => {

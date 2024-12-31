@@ -46,7 +46,7 @@ export class SatisfactoryGraph {
             "background-color: white; color: black; font-weight: bold;",
         );
 
-        // const info = this.constructs.map((c) => c.getOperatingInformation());
-        // console.log(info);
+        const info = this.constructs.map((c) => c.getOperatingInformation());
+        console.log(info);
     }
 }
