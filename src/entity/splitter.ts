@@ -47,7 +47,7 @@ export class Splitter extends IOConstruct {
         ctx.fillRect(...r.xywh());
     }
 
-    assignSocketParts(): void {
+    staticAnalysis(): void {
         const inputPartId = this.input.partId;
         this.outputs.forEach((s) => {
             s.propagate(inputPartId, 0);

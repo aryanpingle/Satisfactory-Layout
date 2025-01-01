@@ -25,12 +25,7 @@ export class Supply extends IOConstruct {
         super(manager, [], socketOutputConfigs);
     }
 
-    assignSocketParts(): void {
-        if (this.partId === undefined)
-            throw new Error(
-                `'partId' has not been set for Supply [${this.id}].`,
-            );
-
+    staticAnalysis(): void {
         this.outputs[0].propagate(this.partId, this.flow);
     }
 

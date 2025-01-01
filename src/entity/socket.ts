@@ -1,7 +1,7 @@
 import { Canvas } from "../canvas";
-import { Colors, INFINITE_FLOW } from "../constants";
+import { Colors } from "../constants";
 import { PartId } from "../database-types";
-import { Rectangle } from "../utils";
+import { Rectangle, withMaxDecimal } from "../utils";
 import { Entity, EntityManager } from "./entity";
 import { IOConstruct } from "./ioconstruct";
 
@@ -85,30 +85,34 @@ export abstract class Socket extends Entity {
             const center = rect.getCenter();
             ctx.font = "normal 0.5px monospace";
             ctx.fillStyle = "black";
-            ctx.fillText(String(this.flow.toPrecision(4)), center.x, center.y);
+            ctx.fillText(withMaxDecimal(this.flow, 4), center.x, center.y);
         }
     }
 
     /**
-     * Disconnect this socket's connection to another socket (if any).
+     * Disconnect this socket's connection to any connected socket.
      */
     disconnect() {
         if (this.ioType === "input") {
             const inputSocket = this as any as SocketInput;
-
             const outputSocket = inputSocket.input as SocketOutput;
+
             if (outputSocket === undefined) return;
+
+            outputSocket.propagate(undefined, 0);
 
             inputSocket.input = undefined;
             outputSocket.output = undefined;
         } else {
             const outputSocket = this as any as SocketOutput;
-
             const inputSocket = outputSocket.output as SocketInput;
+
             if (inputSocket === undefined) return;
 
-            outputSocket.output = undefined;
+            outputSocket.propagate(undefined, 0);
+
             inputSocket.input = undefined;
+            outputSocket.output = undefined;
         }
     }
 

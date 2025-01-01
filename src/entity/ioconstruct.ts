@@ -1,9 +1,9 @@
 import Point from "@mapbox/point-geometry";
 import { Canvas } from "../canvas";
 import { IOCONSTRUCT_ENTITY_NAME } from "../constants";
-import { PartFlowDict } from "../database";
 import { Entity, EntityManager } from "./entity";
 import { SocketParams, SocketInput, SocketOutput, Socket } from "./socket";
+import { PartFlowDict } from "../pfd";
 
 export interface SocketConfig extends SocketParams {
     coords: Point;
@@ -66,28 +66,30 @@ export abstract class IOConstruct extends Entity {
     abstract balance(): void;
 
     /**
-     * Preparatory step to assign a part id to any input or output sockets, if applicable.
-     *
-     * Will be called on all IOConstruct objects once before one or more balance() calls.
+     * Creates a PFD object from input sockets which are connected to some input.
      */
-    abstract assignSocketParts(): void;
-
-    private _getPFDFromSockets(sockets: Socket[]): PartFlowDict {
-        const pfd: PartFlowDict = {};
-        sockets.forEach((s) => {
+    getInputPFD(): PartFlowDict {
+        const pfd = new PartFlowDict();
+        this.inputs.forEach((s) => {
             if (s.partId === undefined) return;
-            if (!(s.partId in pfd)) pfd[s.partId] = 0;
-            pfd[s.partId] = s.flow;
+            if (s.input === undefined) return;
+            pfd._add(s.partId, s.flow);
         });
         return pfd;
     }
 
-    getInputPFD(): PartFlowDict {
-        return this._getPFDFromSockets(this.inputs);
-    }
-
+    /**
+     * Creates a PFD object from the output sockets.
+     *
+     * Not particularly useful, except for debugging.
+     */
     getOutputPFD(): PartFlowDict {
-        return this._getPFDFromSockets(this.outputs);
+        const pfd = new PartFlowDict();
+        this.outputs.forEach((s) => {
+            if (s.partId === undefined) return;
+            pfd._add(s.partId, s.flow);
+        });
+        return pfd;
     }
 
     render(canvas: Canvas) {
@@ -98,4 +100,9 @@ export abstract class IOConstruct extends Entity {
     }
 
     abstract getOperatingInformation(): Object;
+
+    /**
+     * Set the partId of output sockets using information from the input sockets and any other factors.
+     */
+    abstract staticAnalysis(): void;
 }

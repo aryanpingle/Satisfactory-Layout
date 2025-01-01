@@ -42,7 +42,7 @@ export class Sink extends IOConstruct {
         ctx.fillText(String(this.flow), center.x, center.y);
     }
 
-    assignSocketParts(): void {
+    staticAnalysis(): void {
         this.input.setMaxPermitted(Number.POSITIVE_INFINITY);
     }
 

@@ -37,6 +37,13 @@ export function asRectCoords(p1: Point, p2: Point): RectCoords {
     ];
 }
 
+export function withMaxDecimal(value: number, precision: number) {
+    const original = String(value);
+    const withFixed = value.toPrecision(precision);
+    if (original.length < withFixed.length) return original;
+    else return withFixed;
+}
+
 export function fillCircle(
     ctx: CanvasRenderingContext2D,
     cx: number,

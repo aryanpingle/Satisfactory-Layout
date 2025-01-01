@@ -1,4 +1,5 @@
 import { IOCONSTRUCT_ENTITY_NAME } from "./constants";
+import { Database } from "./database";
 import { Entity, EntityManager } from "./entity/entity";
 import { IOConstruct } from "./entity/ioconstruct";
 
@@ -30,7 +31,23 @@ export class SatisfactoryGraph {
             (entity) => entity.name === IOCONSTRUCT_ENTITY_NAME,
         ) as IOConstruct[];
 
-        this.constructs.forEach((construct) => construct.assignSocketParts());
+        this.constructs.forEach((construct) =>
+            construct.staticAnalysis(),
+        );
+    }
+
+    staticAnalysis(iterations: number) {
+        const startTime = performance.now();
+
+        for (let i = 0; i < iterations; ++i) {
+            this.constructs.forEach((construct) => construct.staticAnalysis());
+        }
+
+        const endTime = performance.now();
+        console.log(
+            `Static analysis completed in %c${endTime - startTime}ms.`,
+            "background-color: white; color: black; font-weight: bold;",
+        );
     }
 
     balance(iterations: number) {
@@ -42,7 +59,7 @@ export class SatisfactoryGraph {
 
         const endTime = performance.now();
         console.log(
-            `Balancing complete in %c${endTime - startTime}ms.`,
+            `Balancing completed in %c${endTime - startTime}ms.`,
             "background-color: white; color: black; font-weight: bold;",
         );
 

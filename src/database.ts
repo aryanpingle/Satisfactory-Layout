@@ -7,8 +7,7 @@ import {
     RecipeId,
     RecipeInfo,
 } from "./database-types";
-
-export type PartFlowDict = Partial<Record<PartId, number>>;
+import { PartFlowDict } from "./pfd";
 
 export namespace Database {
     export function getPartInfo(partId: PartId): PartInfo {
@@ -51,20 +50,24 @@ export namespace Database {
     }
 
     export function getProductPFD(recipe: RecipeInfo): PartFlowDict {
+        const pfd = new PartFlowDict();
+
         const duration = recipe.time;
-        const entries = recipe.products.map((o) => [
-            o.item,
-            (o.amount * 60) / duration,
-        ]);
-        return Object.fromEntries(entries);
+        recipe.products.forEach((o) => {
+            pfd._add(o.item as PartId, (o.amount * 60) / duration);
+        });
+
+        return pfd;
     }
 
     export function getIngredientPFD(recipe: RecipeInfo): PartFlowDict {
+        const pfd = new PartFlowDict();
+
         const duration = recipe.time;
-        const entries = recipe.ingredients.map((o) => [
-            o.item,
-            (o.amount * 60) / duration,
-        ]);
-        return Object.fromEntries(entries);
+        recipe.ingredients.forEach((o) => {
+            pfd._add(o.item as PartId, (o.amount * 60) / duration);
+        });
+
+        return pfd;
     }
 }

@@ -47,12 +47,28 @@ export class Merger extends IOConstruct {
         ctx.fillRect(...r.xywh());
     }
 
-    assignSocketParts(): void {
-        // Can't think of anything for now
+    staticAnalysis(): void {
+        // Ensure all inputs have the same partId
+        let detectedPartIds: Set<PartId | undefined> = new Set();
+        this.inputs.forEach((s) => {
+            if (s.partId === undefined) return;
+            detectedPartIds.add(s.partId);
+        });
+
+        if (detectedPartIds.size === 0) {
+            this.output.propagate(undefined, 0);
+            return;
+        } else if (detectedPartIds.size === 1) {
+            const detectedPartId = [...detectedPartIds.values()][0];
+            this.output.propagate(detectedPartId, 0);
+        } else {
+            throw new Error(
+                `Merger [${this.id}] has multiple types of input - ${detectedPartIds}`,
+            );
+        }
     }
 
     balance(): void {
-        // Ensure all inputs have the same partId
         let detectedPartIds: Set<PartId | undefined> = new Set();
         let detectedFlow = 0;
         this.inputs.forEach((s) => {

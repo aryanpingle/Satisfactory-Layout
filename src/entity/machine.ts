@@ -1,6 +1,7 @@
 import { PartId, RecipeId, RecipeInfo } from "../database-types";
-import { Database, PartFlowDict } from "../database";
+import { Database } from "../database";
 import { IOConstruct } from "./ioconstruct";
+import { PartFlowDict } from "../pfd";
 
 /**
  * Abstract class denoting an IOConstruct with the ability to follow a recipe
@@ -23,57 +24,69 @@ export abstract class Machine extends IOConstruct {
         }
     }
 
-    getMaxTheoreticalInputFlows(): PartFlowDict {
-        this.ensureRecipeExists();
-
-        const recipe = this.recipe!;
-        return Database.getIngredientPFD(recipe);
-    }
-
-    assignSocketParts(): void {
-        this.ensureRecipeExists();
-
-        const recipe = this.recipe!;
-        const products = recipe.products;
-
-        if (products.length === 1) {
-            // Only one output
-
-            const partId = products[0].item as PartId;
-            if (Database.isSolid(partId)) {
-                this.outputs.filter((s) => s.acceptType === "solid")[0].partId =
-                    partId;
-            } else {
-                this.outputs.filter((s) => s.acceptType === "fluid")[0].partId =
-                    partId;
-            }
-        } else {
-            // Two outputs - a solid and a fluid
-
-            const solidPartId = products.filter((p) =>
-                Database.isSolid(p.item as PartId),
-            )[0].item as PartId;
-            const fluidPartId = products.filter((p) =>
-                Database.isFluid(p.item as PartId),
-            )[0].item as PartId;
-
-            this.outputs.filter((s) => s.acceptType === "solid")[0].partId =
-                solidPartId;
-            this.outputs.filter((s) => s.acceptType === "fluid")[0].partId =
-                fluidPartId;
-        }
-    }
-
     getOrderedOutputPartIds(): PartId[] {
         this.ensureRecipeExists();
         return this.outputs.map((s) => s.partId!);
     }
 
-    balance(): void {
+    private inputsMatchIngredients() {
+        const recipe = this.recipe!;
+        const inputPFD = this.getInputPFD();
+        const recipeIngredientPFD = Database.getIngredientPFD(recipe);
+
+        return inputPFD.hasSameParts(recipeIngredientPFD);
+    }
+
+    /**
+     * If the recipe has not been set, keep the outputs as undefined.
+     * If it has, and all ingredients are detected in the input sockets,
+     * set the `partId` on output sockets.
+     */
+    override staticAnalysis(): void {
+        if (this.recipeId === undefined) {
+            this.outputs.forEach((s) => s.propagate(undefined, 0));
+            return;
+        }
+
+        // Step 1: Ensure all ingredients are part of the inputs
+        if (!this.inputsMatchIngredients()) {
+            console.warn(
+                `${this.constructName} [${this.id}] does not have the correct inputs set.`,
+            );
+            this.outputs.forEach((s) => s.propagate(undefined, 0));
+            return;
+        }
+
+        // Step 2: Assign parts to the output sockets
+        const products = this.recipe!.products;
+
+        const solidPartId: PartId | undefined = products.filter((o) =>
+            Database.isSolid(o.item as PartId),
+        )[0]?.item as PartId;
+        const fluidPartId: PartId | undefined = products.filter((o) =>
+            Database.isFluid(o.item as PartId),
+        )[0]?.item as PartId;
+
+        this.outputs.forEach((s) => {
+            if (s.acceptType === "solid") {
+                s.propagate(solidPartId, 0);
+            } else {
+                s.propagate(fluidPartId, 0);
+            }
+        });
+    }
+
+    override balance(): void {
         this.ensureRecipeExists();
 
-        const recipeId = this.recipeId!;
-        const recipe = this.recipe!;
+        if (!this.inputsMatchIngredients()) {
+            this.outputs.forEach((s) => s.propagate(undefined, 0));
+            this.inputs.forEach((s) => s.setMaxPermitted(0));
+            return;
+        }
+
+        // At this stage, we know the machine is getting its required inputs
+        // with >= 0 flow
 
         /**
          * STEPS
@@ -87,6 +100,9 @@ export abstract class Machine extends IOConstruct {
          * 4. For all non-bottleneck inputs, set the `maxPermitted` variable
          */
 
+        const recipeId = this.recipeId!;
+        const recipe = this.recipe!;
+
         // Step 1
         let maxPermittedEfficiency = Math.min(
             1,
@@ -95,24 +111,17 @@ export abstract class Machine extends IOConstruct {
 
         // Step 2
         // input ratio - actual flow / required per minute (by recipe)
-        const inputActualPartFlowDict: PartFlowDict = {};
-        this.inputs.forEach((s) => {
-            const partId = s.partId;
-            if (partId === undefined) return;
-
-            inputActualPartFlowDict[partId] = s.flow;
-        });
-
-        const inputMaxPartFlowDict = this.getMaxTheoreticalInputFlows();
-        const inputRatios = (Object.keys(inputMaxPartFlowDict) as PartId[]).map(
-            (partId) =>
-                inputActualPartFlowDict[partId]! /
-                inputMaxPartFlowDict[partId]!,
-        );
+        const inputActualPartFlowDict = this.getInputPFD();
+        const recipeIngredientPFD = Database.getIngredientPFD(recipe);
+        const inputRatios = recipeIngredientPFD
+            .getParts()
+            .map(
+                (partId) =>
+                    inputActualPartFlowDict.get(partId)! /
+                    recipeIngredientPFD.get(partId)!,
+            );
 
         const minInputRatio = Math.min(...inputRatios);
-        if (Number.isNaN(minInputRatio))
-            console.log(inputMaxPartFlowDict, inputActualPartFlowDict);
 
         // Step 3
         const actualEfficiency = Math.min(
@@ -127,16 +136,18 @@ export abstract class Machine extends IOConstruct {
             if (partId === undefined) return;
 
             const maxPermitted =
-                actualEfficiency * inputMaxPartFlowDict[partId]!;
+                actualEfficiency * recipeIngredientPFD.get(partId)!;
+            if (Number.isNaN(maxPermitted))
+                console.error(actualEfficiency, recipeIngredientPFD);
 
             const ratio =
-                inputActualPartFlowDict[partId]! /
-                inputMaxPartFlowDict[partId]!;
+                inputActualPartFlowDict.get(partId)! /
+                recipeIngredientPFD.get(partId)!;
 
             // if this is the bottleneck, there should be no maximum limit here
             if (ratio === actualEfficiency) {
                 // this.debug(s);
-                s.setMaxPermitted(inputMaxPartFlowDict[partId]!);
+                s.setMaxPermitted(recipeIngredientPFD.get(partId)!);
             }
             // if not, then set a maximum limit (this enables manifolds to work)
             else {
@@ -146,12 +157,10 @@ export abstract class Machine extends IOConstruct {
 
         // Actual balancing
         const o = Database.getProductPFD(recipe);
-        for (const key in o) {
-            o[key as PartId]! *= actualEfficiency;
-        }
+        o._mult(actualEfficiency);
         this.outputs.forEach((s) => {
             const socketPart = s.partId!;
-            s.propagate(socketPart, o[socketPart]!);
+            s.propagate(socketPart, o.get(socketPart)!);
         });
     }
 

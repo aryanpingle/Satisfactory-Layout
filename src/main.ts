@@ -127,8 +127,8 @@ export class App {
         Socket.connect(mergers[0].outputs[0], sink.inputs[0]);
 
         this.graph.initializeConstructs();
-
-        this.graph.balance(5);
+        this.graph.staticAnalysis(50);
+        this.graph.balance(1);
     }
 
     /**
