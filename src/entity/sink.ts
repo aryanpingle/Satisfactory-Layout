@@ -5,6 +5,7 @@ import { PartId } from "../database-types";
 import { EntityManager } from "./entity";
 import { IOConstruct, IOConstructParams } from "./ioconstruct";
 import { SocketInput } from "./socket";
+import { withMaxDecimal } from "../utils";
 
 const socketInputConfigs: IOConstructParams["socketInputConfigs"] = [
     {
@@ -39,7 +40,7 @@ export class Sink extends IOConstruct {
         const center = this.getBoundingRect().getCenter();
         ctx.font = "normal 0.5px monospace";
         ctx.fillStyle = "black";
-        ctx.fillText(String(this.flow), center.x, center.y);
+        ctx.fillText(withMaxDecimal(this.flow, 4), center.x, center.y);
     }
 
     staticAnalysis(): void {
