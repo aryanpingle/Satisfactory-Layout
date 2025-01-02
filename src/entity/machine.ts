@@ -1,7 +1,6 @@
 import { PartId, RecipeId, RecipeInfo } from "../database-types";
 import { Database } from "../database";
 import { IOConstruct } from "./ioconstruct";
-import { PartFlowDict } from "../pfd";
 
 /**
  * Abstract class denoting an IOConstruct with the ability to follow a recipe

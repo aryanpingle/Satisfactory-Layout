@@ -45,7 +45,7 @@ export class App {
             this.canvas.height / 2,
         );
 
-        this.loadManifoldTest();
+        this.load1To5();
     }
 
     loadTest() {
@@ -61,8 +61,30 @@ export class App {
         }
 
         this.graph.initializeConstructs();
-
         this.graph.balance(5);
+    }
+
+    load1To5() {
+        // Supply
+        const supply = new Supply(this.entityManager);
+        supply.partId = "Desc_OreIron_C";
+        supply.flow = 120;
+        supply.coords = new Point(-3 * FOUNDATION_SIZE, 0);
+
+        for (let i = 0; i < 4; ++i) {
+            const splitter = new Splitter(this.entityManager);
+        }
+
+        for (let i = 0; i < 2; ++i) {
+            const merger = new Merger(this.entityManager);
+        }
+
+        for (let i = 0; i < 5; ++i) {
+            const sink = new Sink(this.entityManager);
+        }
+
+        this.graph.initializeConstructs();
+        this.graph.staticAnalysis(50);
     }
 
     loadManifoldTest() {

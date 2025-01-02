@@ -48,6 +48,8 @@ export class Splitter extends IOConstruct {
     }
 
     staticAnalysis(): void {
+        this.input.setMaxPermitted(Number.POSITIVE_INFINITY);
+
         const inputPartId = this.input.partId;
         this.outputs.forEach((s) => {
             s.propagate(inputPartId, 0);

@@ -48,6 +48,10 @@ export class Merger extends IOConstruct {
     }
 
     staticAnalysis(): void {
+        this.inputs.forEach((s) => {
+            s.setMaxPermitted(Number.POSITIVE_INFINITY);
+        });
+
         // Ensure all inputs have the same partId
         let detectedPartIds: Set<PartId | undefined> = new Set();
         this.inputs.forEach((s) => {

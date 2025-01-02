@@ -23,6 +23,8 @@ const myTransitionTable = {
             if (key === " ") {
                 app.graph.balance(1);
                 app.render();
+            } else if(key === ".") {
+                app.graph.staticAnalysis(100);
             }
         },
         // Left mouse button - selection state or move the clicked entity

@@ -68,8 +68,8 @@ export function drawConnectionLine(
     // Simple line
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(mid.x, p1.y);
-    ctx.lineTo(mid.x, p2.y);
+    // ctx.lineTo(mid.x, p1.y);
+    // ctx.lineTo(mid.x, p2.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
     ctx.closePath();
