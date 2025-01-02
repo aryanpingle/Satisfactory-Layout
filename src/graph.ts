@@ -31,9 +31,7 @@ export class SatisfactoryGraph {
             (entity) => entity.name === IOCONSTRUCT_ENTITY_NAME,
         ) as IOConstruct[];
 
-        this.constructs.forEach((construct) =>
-            construct.staticAnalysis(),
-        );
+        this.constructs.forEach((construct) => construct.staticAnalysis());
     }
 
     staticAnalysis(iterations: number) {
