@@ -40,7 +40,7 @@ export function getRectLinePoints(
 
     const d = getDirectionsTo(start, end);
     if (d.length === 0) {
-        throw new Error("Fuck you, I'm not handling this. Fuck you.");
+        return [start, end];
     } else if (d.length === 1) {
         return [start, end];
     } else if (d.length === 2) {
