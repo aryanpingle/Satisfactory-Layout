@@ -5,12 +5,13 @@ import { PartId } from "../database-types";
 import { EntityManager } from "./entity";
 import { IOConstruct, IOConstructParams } from "./ioconstruct";
 import { SocketInput } from "./socket";
-import { withMaxDecimal } from "../utils";
+import { Directions, withMaxDecimal } from "../utils";
 
 const socketInputConfigs: IOConstructParams["socketInputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(-FOUNDATION_SIZE / 2, 0),
+        direction: Directions.LEFT,
     },
 ];
 

@@ -4,25 +4,30 @@ import { IOConstruct, IOConstructParams } from "./ioconstruct";
 import { SocketOutput } from "./socket";
 import { EntityManager } from "./entity";
 import { PartId } from "../database-types";
+import { Directions } from "../utils";
 
 const socketInputConfigs: IOConstructParams["socketInputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(0, -2),
+        direction: Directions.UP,
     },
     {
         partType: "solid",
         coords: new Point(-2, 0),
+        direction: Directions.LEFT,
     },
     {
         partType: "solid",
         coords: new Point(0, +2),
+        direction: Directions.DOWN,
     },
 ];
 const socketOutputConfigs: IOConstructParams["socketOutputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(+2, 0),
+        direction: Directions.RIGHT,
     },
 ];
 

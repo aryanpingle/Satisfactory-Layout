@@ -5,7 +5,12 @@ import { Canvas } from "./canvas";
 import { EntityManager } from "./entity/entity";
 import { StateManager } from "./stateManager";
 import { setupStateManagement } from "./events";
-import { Colors, FOUNDATION_SIZE, SOCKET_ENTITY_NAME } from "./constants";
+import {
+    Colors,
+    FOUNDATION_SIZE,
+    SOCKET_ENTITY_NAME,
+    SOCKET_SIZE,
+} from "./constants";
 import { Constructor } from "./entity/machines";
 import { Supply } from "./entity/supply";
 import { Socket } from "./entity/socket";
@@ -71,16 +76,25 @@ export class App {
         supply.flow = 120;
         supply.coords = new Point(-3 * FOUNDATION_SIZE, 0);
 
-        for (let i = 0; i < 4; ++i) {
-            const splitter = new Splitter(this.entityManager);
-        }
-
         for (let i = 0; i < 2; ++i) {
             const merger = new Merger(this.entityManager);
+            merger.coords = new Point(0, -1 * FOUNDATION_SIZE * i);
+        }
+
+        for (let i = 0; i < 4; ++i) {
+            const splitter = new Splitter(this.entityManager);
+            splitter.coords = new Point(
+                1.5 * FOUNDATION_SIZE,
+                -1 * FOUNDATION_SIZE * i,
+            );
         }
 
         for (let i = 0; i < 5; ++i) {
             const sink = new Sink(this.entityManager);
+            sink.coords = new Point(
+                3 * FOUNDATION_SIZE,
+                -1 * FOUNDATION_SIZE * i,
+            );
         }
 
         this.graph.initializeConstructs();
@@ -354,9 +368,29 @@ export class App {
 
         if (state.name === "connection") {
             const connectionState = state as ConnectionState;
-            const p1 = connectionState.socket.getBoundingRect().getCenter();
-            const p2 = connectionState.mouseCoords;
-            drawConnectionLine(ctx, p1, p2);
+            const socket = connectionState.socket;
+            const socketCoords = socket.getBoundingRect().getCenter();
+            const mouseCoords = connectionState.mouseCoords;
+
+            const delta = mouseCoords.sub(socketCoords);
+            // If delta is 0, make it face right
+            if (delta.x === 0 && delta.y === 0) delta.x = 1;
+            // Remove the lesser component
+            if (Math.abs(delta.x) > Math.abs(delta.y)) {
+                delta.y = 0;
+            } else {
+                delta.x = 0;
+            }
+            // Convert it to a unit vector
+            delta._unit();
+
+            drawConnectionLine(
+                ctx,
+                socketCoords,
+                socket.direction,
+                mouseCoords,
+                delta.mult(-1),
+            );
         }
 
         const renderEndTime = performance.now();
@@ -381,13 +415,19 @@ export class App {
             (socket) => socket.output !== undefined,
         );
 
-        connectedSockets.forEach((socket1) => {
-            const socket2 = socket1.output as Socket;
+        connectedSockets.forEach((socketOut) => {
+            const socketIn = socketOut.output as Socket;
 
-            const p1 = socket1.getBoundingRect().getCenter();
-            const p2 = socket2.getBoundingRect().getCenter();
+            const socketOutCoords = socketOut.getBoundingRect().getCenter();
+            const socketInCoords = socketIn.getBoundingRect().getCenter();
 
-            drawConnectionLine(ctx, p1, p2);
+            drawConnectionLine(
+                ctx,
+                socketOutCoords,
+                socketOut.direction,
+                socketInCoords,
+                socketIn.direction,
+            );
         });
     }
 

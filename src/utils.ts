@@ -1,6 +1,130 @@
 import Point from "@mapbox/point-geometry";
+import { SOCKET_SIZE } from "./constants";
 
 export type RectCoords = [number, number, number, number];
+
+export const Directions = {
+    UP: new Point(0, -1),
+    DOWN: new Point(0, +1),
+    LEFT: new Point(-1, 0),
+    RIGHT: new Point(+1, 0),
+};
+
+export type Direction = Point;
+
+function isDirection(point: Point) {
+    return (
+        point.equals(Directions.UP) ||
+        point.equals(Directions.DOWN) ||
+        point.equals(Directions.LEFT) ||
+        point.equals(Directions.RIGHT)
+    );
+}
+
+/**
+ * Get a list of points representing a polyline. The first element will be the
+ * starting point of the polyline.
+ *
+ * The polyline will have either 1, 2 or 3 lines. If the starting and ending
+ * points are the same, fuck you.
+ */
+export function getRectLinePoints(
+    start: Point,
+    startBlock: Direction,
+    end: Point,
+    endBlock: Direction,
+) {
+    if (isWeirdRectLineSituation(start, startBlock, end, endBlock)) {
+        throw new Error("FUCKING SHIT");
+    }
+
+    const d = getDirectionsTo(start, end);
+    if (d.length === 0) {
+        throw new Error("Fuck you, I'm not handling this. Fuck you.");
+    } else if (d.length === 1) {
+        return [start, end];
+    } else if (d.length === 2) {
+        // If this order of directions is invalid
+        if (d[0].equals(startBlock) || d[1].equals(endBlock.mult(-1))) {
+            d.reverse();
+        }
+
+        // It looks cleaner if the line starting at `start` goes in the opposite
+        // direction of `startBlock`.
+        if (
+            d[1].equals(startBlock.mult(-1)) &&
+            !d[0].equals(endBlock.mult(-1))
+        ) {
+            d.reverse();
+        }
+
+        const component = d[0].multByPoint(d[0]).multByPoint(end.sub(start));
+        const midpoint = start.add(component);
+
+        return [start, midpoint, end];
+    }
+
+    // Unreachable
+    return [];
+}
+
+export function isWeirdRectLineSituation(
+    start: Point,
+    startBlock: Direction,
+    end: Point,
+    endBlock: Direction,
+) {
+    // start going up to end
+    if (
+        startBlock.equals(Directions.UP) &&
+        endBlock.equals(Directions.DOWN) &&
+        end.y < start.y
+    )
+        return true;
+    // start going down to end
+    if (
+        startBlock.equals(Directions.DOWN) &&
+        endBlock.equals(Directions.UP) &&
+        end.y > start.y
+    )
+        return true;
+    // start going left to end
+    if (
+        startBlock.equals(Directions.LEFT) &&
+        endBlock.equals(Directions.RIGHT) &&
+        end.x < start.x
+    )
+        return true;
+    // start going right to end
+    if (
+        startBlock.equals(Directions.RIGHT) &&
+        endBlock.equals(Directions.LEFT) &&
+        end.x > start.x
+    )
+        return true;
+
+    return false;
+}
+
+export function getDirectionsTo(start: Point, end: Point): Direction[] {
+    const directions = [];
+
+    // Horizontal directions
+    if (start.x > end.x) {
+        directions.push(Directions.LEFT);
+    } else if (start.x < end.x) {
+        directions.push(Directions.RIGHT);
+    }
+
+    // Vertical directions
+    if (start.y > end.y) {
+        directions.push(Directions.UP);
+    } else if (start.y < end.y) {
+        directions.push(Directions.DOWN);
+    }
+
+    return directions;
+}
 
 export function snap(value: number, mod: number) {
     return value - (value % mod);
@@ -58,19 +182,47 @@ export function fillCircle(
 
 export function drawConnectionLine(
     ctx: CanvasRenderingContext2D,
-    p1: Point,
-    p2: Point,
+    sOutCoords: Point,
+    sOutDirection: Direction,
+    sInCoords: Point,
+    sInDirection: Direction,
 ) {
-    const mid = p1.add(p2).div(2);
-
+    // Line style
     ctx.strokeStyle = "goldenrod";
-    ctx.lineWidth = 0.25;
-    // Simple line
+    ctx.lineWidth = 1;
+
+    const EXTENSION_LENGTH = SOCKET_SIZE;
+
+    const delta = sInCoords.sub(sOutCoords);
+    if (delta.mag() < 2 * EXTENSION_LENGTH) {
+        // Directo shooto da!
+        ctx.beginPath();
+        ctx.moveTo(sOutCoords.x, sOutCoords.y);
+        ctx.lineTo(sInCoords.x, sInCoords.y);
+        ctx.stroke();
+        ctx.closePath();
+
+        return;
+    }
+
+    const sOutExtension = sOutCoords.add(sOutDirection.mult(EXTENSION_LENGTH));
+    const sInExtension = sInCoords.add(sInDirection.mult(EXTENSION_LENGTH));
+
+    const points = getRectLinePoints(
+        sOutExtension,
+        sOutDirection.mult(-1),
+        sInExtension,
+        sInDirection.mult(-1),
+    );
+
     ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    // ctx.lineTo(mid.x, p1.y);
-    // ctx.lineTo(mid.x, p2.y);
-    ctx.lineTo(p2.x, p2.y);
+    // Socket out coords
+    ctx.moveTo(sOutCoords.x, sOutCoords.y);
+    // Lines to all intermediate points (socket out coords -> extension -> extension)
+    points.forEach((point) => {
+        ctx.lineTo(point.x, point.y);
+    });
+    ctx.lineTo(sInCoords.x, sInCoords.y);
     ctx.stroke();
     ctx.closePath();
 }

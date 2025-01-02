@@ -2,8 +2,9 @@ import Point from "@mapbox/point-geometry";
 import { Canvas } from "../canvas";
 import { IOCONSTRUCT_ENTITY_NAME } from "../constants";
 import { Entity, EntityManager } from "./entity";
-import { SocketParams, SocketInput, SocketOutput, Socket } from "./socket";
+import { SocketParams, SocketInput, SocketOutput } from "./socket";
 import { PartFlowDict } from "../pfd";
+import { Direction } from "../utils";
 
 export interface SocketConfig extends SocketParams {
     coords: Point;

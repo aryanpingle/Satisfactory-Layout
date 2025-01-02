@@ -3,25 +3,30 @@ import { Canvas } from "../canvas";
 import { IOConstruct, IOConstructParams } from "./ioconstruct";
 import { EntityManager } from "./entity";
 import { SocketInput } from "./socket";
+import { Directions } from "../utils";
 
 const socketInputConfigs: IOConstructParams["socketInputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(-2, 0),
+        direction: Directions.LEFT,
     },
 ];
 const socketOutputConfigs: IOConstructParams["socketOutputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(0, -2),
+        direction: Directions.UP,
     },
     {
         partType: "solid",
         coords: new Point(+2, 0),
+        direction: Directions.RIGHT,
     },
     {
         partType: "solid",
         coords: new Point(0, +2),
+        direction: Directions.DOWN,
     },
 ];
 

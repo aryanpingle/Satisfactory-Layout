@@ -3,13 +3,14 @@ import { Canvas } from "../canvas";
 import { EntityManager } from "./entity";
 import { IOConstruct, IOConstructParams } from "./ioconstruct";
 import { FOUNDATION_SIZE } from "../constants";
-import { fillCircle } from "../utils";
+import { Directions, fillCircle } from "../utils";
 import { PartId } from "../database-types";
 
 const socketOutputConfigs: IOConstructParams["socketOutputConfigs"] = [
     {
         partType: "solid",
         coords: new Point(FOUNDATION_SIZE / 2, 0),
+        direction: Directions.RIGHT,
     },
 ];
 

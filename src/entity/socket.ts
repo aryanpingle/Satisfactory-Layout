@@ -1,7 +1,7 @@
 import { Canvas } from "../canvas";
 import { Colors } from "../constants";
 import { PartId } from "../database-types";
-import { Rectangle, withMaxDecimal } from "../utils";
+import { Direction, Directions, Rectangle, withMaxDecimal } from "../utils";
 import { Entity, EntityManager } from "./entity";
 import { IOConstruct } from "./ioconstruct";
 
@@ -14,6 +14,7 @@ export interface SocketParams {
     input?: Socket["input"];
     output?: Socket["output"];
     relativeAngle?: number;
+    direction: Direction;
 }
 
 export abstract class Socket extends Entity {
@@ -29,6 +30,8 @@ export abstract class Socket extends Entity {
     acceptType: SocketPartType;
     /** Angle of the socket relative to its East-facing construct. */
     relativeAngle: number;
+    /** Direction in which a conveyer may enter/exit from.  */
+    direction: Direction;
     /** Id of the part flowing through the socket. */
     partId?: PartId;
     // TODO: Use the Fraction class
@@ -44,6 +47,7 @@ export abstract class Socket extends Entity {
         this.output = params.output;
         this.acceptType = params.partType;
         this.relativeAngle = params.relativeAngle ?? 0;
+        this.direction = params.direction ?? Directions.RIGHT;
     }
 
     override getBoundingRect(): Rectangle {
