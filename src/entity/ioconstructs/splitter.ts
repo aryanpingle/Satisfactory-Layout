@@ -123,15 +123,4 @@ export class Splitter extends IOConstruct {
             this.input.setMaxPermitted(Number.POSITIVE_INFINITY);
         }
     }
-
-    getOperatingInformation(): Object {
-        return {
-            id: this.id,
-            name: this.constructName,
-            input: this.input,
-            outputs: this.outputs,
-            inputFlow: this.input.flow,
-            outputFlows: this.outputs.map((s) => s.flow),
-        };
-    }
 }

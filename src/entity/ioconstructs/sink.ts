@@ -57,11 +57,4 @@ export class Sink extends IOConstruct {
     }
 
     balance(): void {}
-
-    getOperatingInformation(): Object {
-        return {
-            id: this.id,
-            name: this.constructName,
-        };
-    }
 }

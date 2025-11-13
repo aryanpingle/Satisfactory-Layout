@@ -65,13 +65,4 @@ export class Supply extends IOConstruct {
         );
         ctx.drawImage(icon, ...r.xywh());
     }
-
-    getOperatingInformation(): Object {
-        return {
-            id: this.id,
-            name: this.constructName,
-            partId: this.partId,
-            flow: this.flow,
-        };
-    }
 }

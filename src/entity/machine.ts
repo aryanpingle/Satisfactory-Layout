@@ -163,33 +163,4 @@ export abstract class Machine extends IOConstruct {
             s.propagate(socketPart, o.get(socketPart)!);
         });
     }
-
-    getOperatingEfficiency(): number | undefined {
-        if (this.recipeId === undefined) return undefined;
-
-        const r = Database.getProductPFD(this.recipe!);
-        const o = this.getOutputPFD();
-        const parts = r.getParts();
-        let minRatio = Math.min(
-            ...parts.map((partId) => o.get(partId)! / r.get(partId)!),
-        );
-        return minRatio;
-    }
-
-    getOperatingInformation(): Object {
-        const inputPFD = this.getInputPFD();
-        const outputPFD = this.getOutputPFD();
-
-        return {
-            id: this.id,
-            name: this.constructName,
-            recipeId: this.recipeId,
-            recipe: this.recipe,
-            inputs: this.inputs,
-            inputPFD: inputPFD,
-            outputs: this.outputs,
-            outputPFD: outputPFD,
-            efficiency: this.getOperatingEfficiency(),
-        };
-    }
 }

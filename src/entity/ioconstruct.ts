@@ -100,8 +100,6 @@ export abstract class IOConstruct extends Entity {
         this.outputs.forEach((socket) => socket.render(canvas));
     }
 
-    abstract getOperatingInformation(): Object;
-
     /**
      * Set the partId of output sockets using information from the input sockets and any other factors.
      */

@@ -102,13 +102,4 @@ export class Merger extends IOConstruct {
         const detectedPartId = [...detectedPartIds.values()][0];
         this.output.propagate(detectedPartId, detectedFlow);
     }
-
-    getOperatingInformation(): Object {
-        return {
-            id: this.id,
-            name: this.constructName,
-            inputs: this.inputs,
-            outputs: this.outputs,
-        };
-    }
 }

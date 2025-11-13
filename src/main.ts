@@ -24,6 +24,7 @@ export class App {
     stateManager: StateManager = null as any;
     entityManager: EntityManager;
     graph: SatisfactoryGraph;
+    copiedEntity?: EntityManager
 
     // Ensures that 750px on the canvas = 10 foundations = 80m
     scale: number = 750 / 10 / FOUNDATION_SIZE;
