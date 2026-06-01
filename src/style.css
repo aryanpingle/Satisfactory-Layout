@@ -15,4 +15,7 @@ body {
 canvas {
     outline: 2px dashed aquamarine;
     outline-offset: 1px;
+
+    height: 100%;
+    width: 100%;
 }

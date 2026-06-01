@@ -47,7 +47,7 @@ export class Splitter extends IOConstruct {
     renderConstruct(canvas: Canvas): void {
         const ctx = canvas.ctx;
 
-        ctx.fillStyle = "yellow";
+        ctx.fillStyle = "orange";
         const r = this.getBoundingRect();
         ctx.fillRect(...r.xywh());
     }

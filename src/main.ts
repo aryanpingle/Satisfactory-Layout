@@ -24,7 +24,7 @@ export class App {
     stateManager: StateManager = null as any;
     entityManager: EntityManager;
     graph: SatisfactoryGraph;
-    copiedEntity?: EntityManager
+    copiedEntity?: EntityManager;
 
     // Ensures that 750px on the canvas = 10 foundations = 80m
     scale: number = 750 / 10 / FOUNDATION_SIZE;
@@ -519,3 +519,14 @@ const app = new App();
 Database.loadPartIcon(undefined).then(() => {
     app.render();
 });
+
+const resizeOb = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    const { width, height } = entry.contentRect;
+    app.canvas.canvasElement.width = width;
+    app.canvas.canvasElement.height = height;
+    app.canvas.onCanvasResize();
+    app.render();
+});
+
+resizeOb.observe(app.canvas.canvasElement);

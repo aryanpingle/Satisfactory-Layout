@@ -45,7 +45,7 @@ export class Refinery extends Machine {
     renderConstruct(canvas: Canvas): void {
         const ctx = canvas.ctx;
 
-        ctx.fillStyle = "violet";
+        ctx.fillStyle = "orange";
         ctx.fillRect(
             this.coords.x - REFINERY_WIDTH / 2,
             this.coords.y - REFINERY_HEIGHT / 2,

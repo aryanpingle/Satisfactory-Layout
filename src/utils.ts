@@ -209,7 +209,7 @@ export function drawConnectionLine(
     sInDirection: Direction,
 ) {
     // Line style
-    ctx.strokeStyle = "goldenrod";
+    ctx.strokeStyle = "#aaa";
     ctx.lineWidth = 1;
 
     const EXTENSION_LENGTH = SOCKET_SIZE;
