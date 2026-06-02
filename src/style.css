@@ -1,21 +1,25 @@
+@import "tailwindcss";
+
 * {
     box-sizing: border-box;
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     background-color: black;
     height: 100vh;
     margin: 0;
     padding: 0;
 }
 
-canvas {
-    outline: 2px dashed aquamarine;
-    outline-offset: 1px;
+#app {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    overflow: hidden;
+}
 
+canvas {
     height: 100%;
     width: 100%;
 }

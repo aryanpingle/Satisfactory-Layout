@@ -16,7 +16,6 @@ import debounce from "debounce";
 import { Merger } from "./entity/ioconstructs/merger";
 import { Sink } from "./entity/ioconstructs/sink";
 import { Refinery } from "./entity/machines/refinery";
-import { Database } from "./database";
 
 export class App {
     canvas: Canvas;
@@ -31,11 +30,10 @@ export class App {
     /** The translation of the visible world space in pixels. */
     translation: Point;
 
-    constructor() {
-        const canvasElement = document.querySelector(
-            "#canvas",
-        ) as HTMLCanvasElement;
+    constructor(canvasElement: HTMLCanvasElement) {
         this.canvas = new Canvas(canvasElement);
+
+        this.canvas.onCanvasResize();
 
         setupStateManagement(this);
 
@@ -393,7 +391,7 @@ export class App {
                 state.startCoords,
                 state.endCoords,
             );
-            const entitiesCaughtInSelection = app.entityManager
+            const entitiesCaughtInSelection = this.entityManager
                 .getEntitiesIntersecting(selectionRect)
                 .filter((entity) => entity.attachment === false);
 
@@ -514,19 +512,3 @@ export class App {
         }
     }
 }
-
-const app = new App();
-Database.loadPartIcon(undefined).then(() => {
-    app.render();
-});
-
-const resizeOb = new ResizeObserver((entries) => {
-    const entry = entries[0];
-    const { width, height } = entry.contentRect;
-    app.canvas.canvasElement.width = width;
-    app.canvas.canvasElement.height = height;
-    app.canvas.onCanvasResize();
-    app.render();
-});
-
-resizeOb.observe(app.canvas.canvasElement);

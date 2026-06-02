@@ -26,9 +26,9 @@ export class Canvas {
     }
 
     onCanvasResize() {
-        console.log("canvas resized", this);
-        this.width = this.canvasElement.width;
-        this.height = this.canvasElement.height;
+        const rect = this.canvasElement.getBoundingClientRect();
+        this.width = this.canvasElement.width = rect.width;
+        this.height = this.canvasElement.height = rect.height;
     }
 
     // --- UTILITY METHODS
