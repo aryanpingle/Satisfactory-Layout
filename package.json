@@ -25,6 +25,7 @@
     "debounce": "^2.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.14"
   }
 }

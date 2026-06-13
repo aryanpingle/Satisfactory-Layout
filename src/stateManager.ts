@@ -1,10 +1,36 @@
-import { EventName, State, StateName } from "./state";
+import { create } from "zustand";
+import { EventName, State, StateFactory, StateName } from "./state";
 
 export type TransitionCallback = (state: State, ...args: any[]) => void;
 
 export type TransitionTable = Partial<
     Record<StateName, Partial<Record<EventName, TransitionCallback>>>
 >;
+
+export const store = create<{
+    currentState: State;
+    transitionTable: TransitionTable;
+    setTransitionTable: (t: TransitionTable) => void;
+    triggerEvent: (eventName: EventName, ...args: any[]) => void;
+    transition: (newState: State) => void;
+}>((set, get) => ({
+    currentState: StateFactory.createIdleState(),
+    transitionTable: {},
+    setTransitionTable: (t) => set({ transitionTable: t }),
+    triggerEvent: (eventName, ...args) => {
+        const obj = get();
+        const stateName = obj.currentState.name;
+
+        const stateTransitions = obj.transitionTable[stateName];
+        if (stateTransitions === undefined) return;
+
+        const transitionCallback = stateTransitions[eventName];
+        if (transitionCallback === undefined) return;
+
+        transitionCallback(obj.currentState, ...args);
+    },
+    transition: (newState) => set({ currentState: newState }),
+}));
 
 export class StateManager {
     currentState: State;
@@ -13,28 +39,10 @@ export class StateManager {
     constructor(transitionTable: TransitionTable, initialState: State) {
         this.transitionTable = transitionTable;
         this.currentState = initialState;
+
+        // For refactoring to zustand:
+        store.getState().setTransitionTable(transitionTable); // Assume idle state is initial (for convenience)
     }
-
-    // TODO: Remove?
-    // registerTransition(
-    //     stateName: StateName,
-    //     eventName: EventName,
-    //     callback: TransitionCallback
-    // ) {
-    //     if (!(stateName in this.transitionTable)) {
-    //         this.transitionTable[stateName] = {};
-    //     }
-
-    //     const stateTransitions = this.transitionTable[stateName]!;
-
-    //     if (eventName in stateTransitions) {
-    //         throw new Error(
-    //             `State '${stateName}' already has a transition for event ${eventName}`
-    //         );
-    //     }
-
-    //     stateTransitions[eventName] = callback;
-    // }
 
     /**
      * Initiate the transition callback from the current state in response to
@@ -69,5 +77,8 @@ export class StateManager {
 
     transition(newState: State) {
         this.currentState = newState;
+
+        // For refactoring to zustand:
+        store.getState().transition(newState);
     }
 }

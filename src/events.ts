@@ -1,5 +1,5 @@
 import Point from "@mapbox/point-geometry";
-import { type App } from "./main";
+import { type PsigmaApp } from "./main";
 import {
     ConnectionState,
     IdleState,
@@ -17,7 +17,7 @@ import { Socket } from "./entity/socket";
 
 const myTransitionTable = {
     idle: {
-        keypress: (state: IdleState, event: KeyboardEvent, app: App) => {
+        keypress: (state: IdleState, event: KeyboardEvent, app: PsigmaApp) => {
             const key = event.key;
 
             if (key === " ") {
@@ -28,11 +28,19 @@ const myTransitionTable = {
             }
         },
         // Left mouse button - selection state or move the clicked entity
-        mousedown_lmb: (state: IdleState, event: MouseEvent, app: App) => {
+        mousedown_lmb: (
+            state: IdleState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             idleClick(event, app);
         },
         // Middle mouse button - panning state
-        mousedown_mmb: (state: IdleState, event: MouseEvent, app: App) => {
+        mousedown_mmb: (
+            state: IdleState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const panningState = StateFactory.createPanningState(
                 mouseCoords,
@@ -40,21 +48,25 @@ const myTransitionTable = {
             );
             app.stateManager.transition(panningState);
         },
-        scroll: (state: IdleState, event: WheelEvent, app: App) => {
+        scroll: (state: IdleState, event: WheelEvent, app: PsigmaApp) => {
             simpleScroll(event, app);
         },
-        zoom: (state: IdleState, event: WheelEvent, app: App) => {
+        zoom: (state: IdleState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
         },
     },
     selecting: {
-        mousemove: (state: SelectingState, event: MouseEvent, app: App) => {
+        mousemove: (
+            state: SelectingState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
             state.endCoords = mouseWorldCoords;
             app.render();
         },
-        mouseup: (state: SelectingState, event: MouseEvent, app: App) => {
+        mouseup: (state: SelectingState, event: MouseEvent, app: PsigmaApp) => {
             // Get selected entities
             const selectionRect = Rectangle.fromTwoPoints(
                 state.startCoords,
@@ -81,7 +93,7 @@ const myTransitionTable = {
 
             app.render();
         },
-        scroll: (state: SelectingState, event: WheelEvent, app: App) => {
+        scroll: (state: SelectingState, event: WheelEvent, app: PsigmaApp) => {
             simpleScroll(event, app);
 
             // Update the selection box
@@ -91,7 +103,7 @@ const myTransitionTable = {
 
             app.render();
         },
-        zoom: (state: SelectingState, event: WheelEvent, app: App) => {
+        zoom: (state: SelectingState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
 
             // Update the selection box
@@ -103,7 +115,11 @@ const myTransitionTable = {
         },
     },
     selection: {
-        mousedown_lmb: (state: SelectionState, event: MouseEvent, app: App) => {
+        mousedown_lmb: (
+            state: SelectionState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             // Get the bounding rect over the selection
             const selectedEntities = Array.from(state.selectedIds).map((id) =>
                 app.entityManager.getEntity(id),
@@ -132,7 +148,11 @@ const myTransitionTable = {
                 idleClick(event, app);
             }
         },
-        mousedown_mmb: (state: SelectionState, event: MouseEvent, app: App) => {
+        mousedown_mmb: (
+            state: SelectionState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const panningState = StateFactory.createPanningState(
                 mouseCoords,
@@ -140,15 +160,19 @@ const myTransitionTable = {
             );
             app.stateManager.transition(panningState);
         },
-        scroll: (state: SelectionState, event: WheelEvent, app: App) => {
+        scroll: (state: SelectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleScroll(event, app);
         },
-        zoom: (state: SelectionState, event: WheelEvent, app: App) => {
+        zoom: (state: SelectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
         },
     },
     relocating: {
-        mousemove: (state: RelocatingState, event: MouseEvent, app: App) => {
+        mousemove: (
+            state: RelocatingState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
 
@@ -165,7 +189,11 @@ const myTransitionTable = {
 
             app.render();
         },
-        mouseup: (state: RelocatingState, event: MouseEvent, app: App) => {
+        mouseup: (
+            state: RelocatingState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const selectionState = StateFactory.createSelectionState(
                 state.selectedIds,
             );
@@ -173,15 +201,15 @@ const myTransitionTable = {
 
             app.render();
         },
-        scroll: (state: SelectionState, event: WheelEvent, app: App) => {
+        scroll: (state: SelectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleScroll(event, app);
         },
-        zoom: (state: SelectionState, event: WheelEvent, app: App) => {
+        zoom: (state: SelectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
         },
     },
     panning: {
-        mousemove: (state: PanningState, event: MouseEvent, app: App) => {
+        mousemove: (state: PanningState, event: MouseEvent, app: PsigmaApp) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const translationPx = mouseCoords.sub(state.startCoords);
 
@@ -189,13 +217,13 @@ const myTransitionTable = {
 
             app.translateBy(translationPx);
         },
-        mouseup: (state: PanningState, event: MouseEvent, app: App) => {
+        mouseup: (state: PanningState, event: MouseEvent, app: PsigmaApp) => {
             // Exit panning, go back to the previous state
             app.stateManager.transition(state.previousState);
 
             app.render();
         },
-        zoom: (state: PanningState, event: WheelEvent, app: App) => {
+        zoom: (state: PanningState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
         },
     },
@@ -203,7 +231,7 @@ const myTransitionTable = {
         mousedown_lmb: (
             state: ConnectionState,
             event: MouseEvent,
-            app: App,
+            app: PsigmaApp,
         ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
@@ -234,14 +262,18 @@ const myTransitionTable = {
         mousedown_mmb: (
             state: ConnectionState,
             event: MouseEvent,
-            app: App,
+            app: PsigmaApp,
         ) => {
             const idleState = StateFactory.createIdleState();
             app.stateManager.transition(idleState);
 
             app.render();
         },
-        mousemove: (state: ConnectionState, event: MouseEvent, app: App) => {
+        mousemove: (
+            state: ConnectionState,
+            event: MouseEvent,
+            app: PsigmaApp,
+        ) => {
             const mouseCoords = mouseCoordsAsPoint(event);
             const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
 
@@ -250,10 +282,10 @@ const myTransitionTable = {
 
             app.render();
         },
-        scroll: (state: ConnectionState, event: WheelEvent, app: App) => {
+        scroll: (state: ConnectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleScroll(event, app);
         },
-        zoom: (state: ConnectionState, event: WheelEvent, app: App) => {
+        zoom: (state: ConnectionState, event: WheelEvent, app: PsigmaApp) => {
             simpleZoom(event, app);
         },
     },
@@ -261,13 +293,13 @@ const myTransitionTable = {
 
 // --- Common Functions
 
-export function simpleScroll(event: WheelEvent, app: App) {
+export function simpleScroll(event: WheelEvent, app: PsigmaApp) {
     // Translation
     const translationPx = new Point(-event.deltaX, -event.deltaY);
     app.translateBy(translationPx);
 }
 
-export function simpleZoom(event: WheelEvent, app: App) {
+export function simpleZoom(event: WheelEvent, app: PsigmaApp) {
     // Exponential zoom
     const ZOOM_INTENSITY = 0.0075;
     const delta = -event.deltaY;
@@ -279,7 +311,7 @@ export function simpleZoom(event: WheelEvent, app: App) {
 /**
  * In any state, handles a general mousedown_lmb event on the canvas or some entity.
  */
-export function idleClick(event: MouseEvent, app: App) {
+export function idleClick(event: MouseEvent, app: PsigmaApp) {
     const mouseCoords = mouseCoordsAsPoint(event);
     const mouseWorldCoords = app.canvasPointToWorldPoint(mouseCoords);
 
@@ -317,7 +349,7 @@ export function idleClick(event: MouseEvent, app: App) {
 
 // --- Setting up state management for the app object
 
-export function setupStateManagement(app: App) {
+export function setupStateManagement(app: PsigmaApp) {
     // Set up state manager
     app.stateManager = new StateManager(
         myTransitionTable,

@@ -1,8 +1,9 @@
-import { App as PsigmaApp } from "./main";
+import { PsigmaApp } from "./main";
 import { StrictMode, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { LeftPanel } from "./ui/LeftPanel";
 import { Database } from "./database";
+import { RightPanel } from "./ui/RightPanel";
 
 export function App() {
     const canvasElementRef = useRef<HTMLCanvasElement>(null);
@@ -21,7 +22,7 @@ export function App() {
             app.canvas.onCanvasResize();
             app.render();
         });
-    });
+    }, []);
 
     return (
         <div className="grid grid-flow-col grid-cols-[15rem_1fr_20rem] w-full h-full">
@@ -34,7 +35,7 @@ export function App() {
                     tabIndex={0}
                 />
             </div>
-            <div className="right_panel">Right panel here</div>
+            <RightPanel />
         </div>
     );
 }

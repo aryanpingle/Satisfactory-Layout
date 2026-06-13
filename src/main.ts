@@ -17,7 +17,7 @@ import { Merger } from "./entity/ioconstructs/merger";
 import { Sink } from "./entity/ioconstructs/sink";
 import { Refinery } from "./entity/machines/refinery";
 
-export class App {
+export class PsigmaApp {
     canvas: Canvas;
     // Will be initialized in events.ts
     stateManager: StateManager = null as any;
@@ -35,6 +35,7 @@ export class App {
 
         this.canvas.onCanvasResize();
 
+        // TODO: Typescript can't detect that stateManager is being initialized here
         setupStateManagement(this);
 
         this.entityManager = new EntityManager();
