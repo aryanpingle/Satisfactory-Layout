@@ -1,5 +1,8 @@
 import Point from "@mapbox/point-geometry";
 import { SOCKET_SIZE } from "./constants";
+import EventEmitter from "eventemitter3";
+
+export const EVENT_EMITTER = new EventEmitter<"part_icon_loaded">();
 
 export type RectCoords = [number, number, number, number];
 

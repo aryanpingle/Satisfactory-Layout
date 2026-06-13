@@ -60,8 +60,5 @@ export class SatisfactoryGraph {
             `Balancing completed in %c${endTime - startTime}ms.`,
             "background-color: white; color: black; font-weight: bold;",
         );
-
-        const info = this.constructs.map((c) => c.getOperatingInformation());
-        console.log(info);
     }
 }

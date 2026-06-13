@@ -8,6 +8,7 @@ import {
     RecipeInfo,
 } from "./database-types";
 import { PartFlowDict } from "./pfd";
+import { EVENT_EMITTER } from "./utils";
 
 let ALL_PART_IDS: PartId[] = [];
 
@@ -121,7 +122,10 @@ export namespace Database {
         const img = new Image();
         img.src = getPartIconURL(partId);
         await new Promise((resolve, reject) => {
-            img.onload = resolve;
+            img.onload = () => {
+                EVENT_EMITTER.emit("part_icon_loaded");
+                resolve(undefined);
+            };
             img.onerror = reject;
         });
         partIconImages[sanitized] = img;
