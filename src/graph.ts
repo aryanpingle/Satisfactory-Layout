@@ -1,6 +1,5 @@
 import { IOCONSTRUCT_ENTITY_NAME } from "./constants";
-import { Database } from "./database";
-import { Entity, EntityManager } from "./entity/entity";
+import { EntityManager } from "./entity/entity";
 import { IOConstruct } from "./entity/ioconstruct";
 
 /**
