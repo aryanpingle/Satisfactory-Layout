@@ -2,7 +2,7 @@ import Point from "@mapbox/point-geometry";
 import { Canvas } from "../canvas";
 import { IOCONSTRUCT_ENTITY_NAME } from "../constants";
 import { Entity, EntityManager } from "./entity";
-import { SocketParams, SocketInput, SocketOutput } from "./socket";
+import { SocketParams, SocketInput, SocketOutput, Socket } from "./socket";
 import { PartFlowDict } from "../pfd";
 
 export interface SocketConfig extends SocketParams {
@@ -52,6 +52,19 @@ export abstract class IOConstruct extends Entity {
             socket.coords = params.coords;
             return socket;
         });
+    }
+
+    delete(): void {
+        this.inputs.forEach((input) => {
+            input.disconnect();
+            this.manager.deleteEntity(input.id);
+        });
+        this.outputs.forEach((output) => {
+            output.disconnect();
+            this.manager.deleteEntity(output.id);
+        });
+
+        this.manager.deleteEntity(this.id);
     }
 
     abstract renderConstruct(canvas: Canvas): void;

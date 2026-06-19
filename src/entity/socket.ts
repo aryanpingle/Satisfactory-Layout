@@ -203,6 +203,8 @@ export class SocketInput extends Socket {
         return copy;
     }
 
+    delete(): void {}
+
     setMaxPermitted(maxPermitted: number) {
         this.maxPermitted = maxPermitted;
 
@@ -234,6 +236,8 @@ export class SocketOutput extends Socket {
         });
         return copy;
     }
+
+    delete(): void {}
 
     propagate(partId: PartId | undefined, flow: number) {
         this.partId = partId;

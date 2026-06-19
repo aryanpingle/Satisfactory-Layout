@@ -42,6 +42,8 @@ export abstract class Entity {
 
     abstract clone(): Entity;
 
+    abstract delete(): void;
+
     cloneWithPosition() {
         const duplicate = this.clone();
 
@@ -83,6 +85,10 @@ export class EntityManager {
     registerEntity(entity: Entity) {
         entity.id = this.createEntityId();
         this.entities[entity.id] = entity;
+    }
+
+    deleteEntity(id: EntityId): void {
+        delete this.entities[id];
     }
 
     getEntity(id: EntityId): Entity {

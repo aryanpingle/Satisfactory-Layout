@@ -12,7 +12,8 @@ export type EventName =
     | "mousemove"
     | "mouseup"
     | "scroll"
-    | "zoom";
+    | "zoom"
+    | "keydown";
 
 export enum StateName {
     IDLE = "idle",

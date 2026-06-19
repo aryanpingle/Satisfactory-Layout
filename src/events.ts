@@ -180,6 +180,22 @@ const myTransitionTable = {
                 app.render();
             }
         },
+        keydown: (
+            state: SelectionState,
+            event: KeyboardEvent,
+            app: PsigmaApp,
+        ) => {
+            if (event.key === "Delete" || event.key === "Backspace") {
+                const entities = app.entityManager.getEntities(
+                    state.selectedIds,
+                );
+                entities.forEach((entity) => entity.delete());
+
+                const idleState = StateFactory.createIdleState();
+                app.stateManager.transition(idleState);
+                app.render();
+            }
+        },
         mousedown_lmb: (
             state: SelectionState,
             event: MouseEvent,
@@ -438,6 +454,9 @@ export function setupStateManagement(app: PsigmaApp) {
     // keypress
     app.canvas.canvasElement.addEventListener("keypress", (event) => {
         app.stateManager.triggerEvent("keypress", event, app);
+    });
+    app.canvas.canvasElement.addEventListener("keydown", (event) => {
+        app.stateManager.triggerEvent("keydown", event, app);
     });
     // mousedown - lmb, mmb, rmb
     app.canvas.canvasElement.addEventListener("mousedown", (event) => {

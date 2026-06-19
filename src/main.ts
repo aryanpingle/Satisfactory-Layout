@@ -47,8 +47,7 @@ export class PsigmaApp {
             this.canvas.height / 2,
         );
 
-        // this.loadBauxiteShit();
-        this.load1To5();
+        this.loadBauxiteShit();
     }
 
     loadBauxiteShit() {
