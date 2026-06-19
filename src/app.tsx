@@ -69,9 +69,5 @@ export function App() {
 await Database.loadPartIcon(undefined);
 let appRoot;
 if ((appRoot = document.querySelector("#app"))) {
-    createRoot(appRoot).render(
-        <StrictMode>
-            <App />
-        </StrictMode>,
-    );
+    createRoot(appRoot).render(<App />);
 }

@@ -12,10 +12,10 @@ import { Socket } from "./entity/socket";
 import { ConnectionState } from "./state";
 import { SatisfactoryGraph } from "./graph";
 import { Splitter } from "./entity/ioconstructs/splitter";
-import debounce from "debounce";
 import { Merger } from "./entity/ioconstructs/merger";
 import { Sink } from "./entity/ioconstructs/sink";
 import { Refinery } from "./entity/machines/refinery";
+import { throttle } from "es-toolkit";
 
 export class PsigmaApp {
     canvas: Canvas;
@@ -47,7 +47,8 @@ export class PsigmaApp {
             this.canvas.height / 2,
         );
 
-        this.loadBauxiteShit();
+        // this.loadBauxiteShit();
+        this.load1To5();
     }
 
     loadBauxiteShit() {
@@ -131,7 +132,7 @@ export class PsigmaApp {
         supply.coords = new Point(-3 * FOUNDATION_SIZE, 0);
 
         for (let i = 0; i < 2; ++i) {
-            const merger = new Merger(this.entityManager, "fluid");
+            const merger = new Merger(this.entityManager, "solid");
             merger.coords = new Point(0, -1 * FOUNDATION_SIZE * i);
         }
 
@@ -293,8 +294,8 @@ export class PsigmaApp {
 
         // Render only the lines in view
         const topLeftWorldPoint = this.canvasPointToWorldPoint(new Point(0, 0));
-        const canvasWidthInWorldSpace = this.canvas.width * this.scale;
-        const canvasHeightInWorldSpace = this.canvas.height * this.scale;
+        const canvasWidthInWorldSpace = this.canvas.width / this.scale;
+        const canvasHeightInWorldSpace = this.canvas.height / this.scale;
 
         // Horizontal lines
         const topStart = snap(topLeftWorldPoint.y, FOUNDATION_SIZE);
@@ -349,7 +350,7 @@ export class PsigmaApp {
     }
 
     render() {
-        debounce(this._render.bind(this), 1000 / 120, { immediate: true })();
+        throttle(this._render.bind(this), 1000 / 120, { edges: ["leading"] })();
     }
 
     private _render() {

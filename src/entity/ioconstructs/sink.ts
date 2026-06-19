@@ -1,7 +1,6 @@
 import Point from "@mapbox/point-geometry";
 import { Canvas } from "../../canvas";
 import { FOUNDATION_SIZE } from "../../constants";
-import { PartId } from "../../database-types";
 import { EntityManager } from "../entity";
 import { IOConstruct, IOConstructParams } from "../ioconstruct";
 import { SocketInput } from "../socket";
@@ -27,6 +26,11 @@ export class Sink extends IOConstruct {
         super(manager, socketInputConfigs, []);
 
         this.input = this.inputs[0];
+    }
+
+    clone() {
+        const duplicate = new Sink(this.manager);
+        return duplicate;
     }
 
     renderConstruct(canvas: Canvas): void {

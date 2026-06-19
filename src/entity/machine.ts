@@ -1,6 +1,7 @@
 import { PartId, RecipeId, RecipeInfo } from "../database-types";
 import { Database } from "../database";
-import { IOConstruct } from "./ioconstruct";
+import { IOConstruct, SocketConfig } from "./ioconstruct";
+import { EntityManager } from "./entity";
 
 /**
  * Abstract class denoting an IOConstruct with the ability to follow a recipe
@@ -9,6 +10,16 @@ import { IOConstruct } from "./ioconstruct";
 export abstract class Machine extends IOConstruct {
     recipeId?: RecipeId;
     recipe?: RecipeInfo;
+
+    constructor(
+        manager: EntityManager,
+        socketInputConfigs: SocketConfig[],
+        socketOutputConfigs: SocketConfig[],
+        recipeId?: RecipeId,
+    ) {
+        super(manager, socketInputConfigs, socketOutputConfigs);
+        if (recipeId) this.setRecipe(recipeId);
+    }
 
     setRecipe(recipeId: RecipeId) {
         this.recipeId = recipeId;

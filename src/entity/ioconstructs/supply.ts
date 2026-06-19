@@ -1,6 +1,6 @@
 import Point from "@mapbox/point-geometry";
 import { Canvas } from "../../canvas";
-import { EntityManager } from "../entity";
+import { Entity, EntityManager } from "../entity";
 import { IOConstruct, IOConstructParams } from "../ioconstruct";
 import { FOUNDATION_SIZE } from "../../constants";
 import { Directions, fillCircle, Rectangle } from "../../utils";
@@ -29,6 +29,13 @@ export class Supply extends IOConstruct {
     constructor(manager: EntityManager) {
         super(manager, [], socketOutputConfigs);
         this.output = this.outputs[0];
+    }
+
+    clone() {
+        const duplicate = new Supply(this.manager);
+        duplicate.partId = this.partId;
+        duplicate.flow = this.flow;
+        return duplicate;
     }
 
     staticAnalysis(): void {

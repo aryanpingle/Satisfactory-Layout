@@ -36,6 +36,7 @@ export class Merger extends IOConstruct {
     constructName: string = "Merger";
     width: number = 4;
     height: number = 4;
+    ioType: SocketPartType;
 
     output: SocketOutput;
 
@@ -45,6 +46,12 @@ export class Merger extends IOConstruct {
         super(manager, socketInputConfigs, socketOutputConfigs);
 
         this.output = this.outputs[0];
+        this.ioType = ioType;
+    }
+
+    clone() {
+        const duplicate = new Merger(this.manager, this.ioType);
+        return duplicate;
     }
 
     renderConstruct(canvas: Canvas): void {

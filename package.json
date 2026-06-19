@@ -24,6 +24,7 @@
     "@rexxars/react-split-pane": "^1.0.0",
     "color": "^4.2.3",
     "debounce": "^2.2.0",
+    "es-toolkit": "^1.47.1",
     "eventemitter3": "^5.0.4",
     "nanoid": "^5.1.11",
     "react": "^19.2.7",

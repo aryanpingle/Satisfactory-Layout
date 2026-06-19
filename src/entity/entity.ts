@@ -40,6 +40,16 @@ export abstract class Entity {
      */
     abstract render(canvas: Canvas): void;
 
+    abstract clone(): Entity;
+
+    cloneWithPosition() {
+        const duplicate = this.clone();
+
+        duplicate.coords = this.coords.clone();
+
+        return duplicate;
+    }
+
     debug(...data: any[]) {
         console.log(`Entity [${this.id}]:`, ...data);
     }

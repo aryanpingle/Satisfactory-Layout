@@ -192,6 +192,17 @@ export class SocketInput extends Socket {
         this.output = params.output as any;
     }
 
+    clone() {
+        const copy = new SocketInput(this.manager, {
+            input: undefined,
+            output: undefined,
+            direction: this.direction,
+            partType: this.acceptType,
+            relativeAngle: this.relativeAngle,
+        });
+        return copy;
+    }
+
     setMaxPermitted(maxPermitted: number) {
         this.maxPermitted = maxPermitted;
 
@@ -211,6 +222,17 @@ export class SocketOutput extends Socket {
 
         this.input = params.input as any;
         this.output = params.output as any;
+    }
+
+    clone() {
+        const copy = new SocketOutput(this.manager, {
+            input: undefined,
+            output: undefined,
+            direction: this.direction,
+            partType: this.acceptType,
+            relativeAngle: this.relativeAngle,
+        });
+        return copy;
     }
 
     propagate(partId: PartId | undefined, flow: number) {

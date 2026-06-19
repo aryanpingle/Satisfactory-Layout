@@ -44,6 +44,11 @@ export class Splitter extends IOConstruct {
         this.input = this.inputs[0];
     }
 
+    clone() {
+        const duplicate = new Splitter(this.manager);
+        return duplicate;
+    }
+
     renderConstruct(canvas: Canvas): void {
         const ctx = canvas.ctx;
 

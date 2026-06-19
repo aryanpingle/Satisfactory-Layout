@@ -24,6 +24,7 @@ export class SatisfactoryGraph {
         this.manager = manager;
     }
 
+    /** Builds and caches the underlying Satisfactory graph */
     initializeConstructs() {
         const entities = this.manager.getActiveEntities();
         this.constructs = entities.filter(
@@ -33,6 +34,12 @@ export class SatisfactoryGraph {
         this.constructs.forEach((construct) => construct.staticAnalysis());
     }
 
+    /**
+     * Propagates part IDs and flow rates without any balancing.
+     * Useful for determining which parts are going where and if part types are correct.
+     * 
+     * O(#IOConstructs) per iteration
+     */
     staticAnalysis(iterations: number) {
         const startTime = performance.now();
 

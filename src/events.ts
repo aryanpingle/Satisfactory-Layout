@@ -12,8 +12,9 @@ import {
 import { StateManager, TransitionTable } from "./stateManager";
 import { getButton, modPoint, mouseCoordsAsPoint, Rectangle } from "./utils";
 import { EntityManager } from "./entity/entity";
-import { SOCKET_ENTITY_NAME } from "./constants";
-import { Socket } from "./entity/socket";
+import { IOCONSTRUCT_ENTITY_NAME, SOCKET_ENTITY_NAME } from "./constants";
+import { Socket, SocketOutput } from "./entity/socket";
+import { IOConstruct } from "./entity/ioconstruct";
 
 const myTransitionTable = {
     idle: {
@@ -24,6 +25,7 @@ const myTransitionTable = {
                 app.graph.balance(1);
                 app.render();
             } else if (key === ".") {
+                app.graph.initializeConstructs();
                 app.graph.staticAnalysis(100);
             }
         },
@@ -115,6 +117,69 @@ const myTransitionTable = {
         },
     },
     selection: {
+        keypress: (
+            state: SelectionState,
+            event: KeyboardEvent,
+            app: PsigmaApp,
+        ) => {
+            if (event.key === "V") {
+                const originalEntities = app.entityManager.getEntities(
+                    state.selectedIds,
+                );
+                const newEntities = originalEntities.map((e) =>
+                    e.cloneWithPosition(),
+                );
+
+                // Do a graph-clone of the selected subgraph
+                originalEntities.forEach((entityA, entityIndex) => {
+                    if (entityA.name === IOCONSTRUCT_ENTITY_NAME) {
+                        const constructA = entityA as IOConstruct;
+                        const constructB = newEntities[
+                            entityIndex
+                        ] as IOConstruct;
+
+                        // Clone input connections
+                        constructA.inputs.forEach((inputA, inputIndex) => {
+                            const inputB = constructB.inputs[inputIndex];
+
+                            const previousConstructA = inputA.input?.input;
+                            if (!previousConstructA) return;
+
+                            const correspondingSocketIndex =
+                                previousConstructA.outputs.findIndex(
+                                    (output) => output.id === inputA.input?.id,
+                                );
+
+                            const matchingConstructIndex =
+                                originalEntities.findIndex(
+                                    (og) => og.id === previousConstructA.id,
+                                );
+                            if (matchingConstructIndex === -1) return;
+
+                            const connectedConstructB = newEntities[
+                                matchingConstructIndex
+                            ] as IOConstruct;
+
+                            const connectedSocketB =
+                                connectedConstructB.outputs[
+                                    correspondingSocketIndex
+                                ];
+
+                            // All original entities have been cloned, along
+                            // with the sockets of the IOConstructs. But we
+                            // don't have a 1:1 mapping of sockets, just of the
+                            // constructs. So use the socket index to match them.
+                            Socket.connect(inputB, connectedSocketB);
+                        });
+                    }
+                });
+
+                // Select the new entities
+                state.selectedIds = newEntities.map((e) => e.id);
+
+                app.render();
+            }
+        },
         mousedown_lmb: (
             state: SelectionState,
             event: MouseEvent,

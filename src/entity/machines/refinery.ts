@@ -4,6 +4,7 @@ import { EntityManager } from "../entity";
 import { IOConstructParams } from "../ioconstruct";
 import { Machine } from "../machine";
 import { Directions } from "../../utils";
+import { RecipeId } from "../../database-types";
 
 const REFINERY_WIDTH = 20;
 const REFINERY_HEIGHT = 10;
@@ -38,8 +39,13 @@ export class Refinery extends Machine {
     width: number = REFINERY_WIDTH;
     height: number = REFINERY_HEIGHT;
 
-    constructor(manager: EntityManager) {
-        super(manager, socketInputConfigs, socketOutputConfigs);
+    constructor(manager: EntityManager, recipeId?: RecipeId) {
+        super(manager, socketInputConfigs, socketOutputConfigs, recipeId);
+    }
+
+    clone() {
+        const duplicate = new Refinery(this.manager, this.recipeId);
+        return duplicate;
     }
 
     renderConstruct(canvas: Canvas): void {

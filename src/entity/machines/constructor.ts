@@ -4,6 +4,7 @@ import { EntityManager } from "../entity";
 import { IOConstructParams } from "../ioconstruct";
 import { Machine } from "../machine";
 import { Directions } from "../../utils";
+import { RecipeId } from "../../database-types";
 
 const CONSTRUCTOR_WIDTH = 10;
 const CONSTRUCTOR_HEIGHT = 8;
@@ -28,8 +29,13 @@ export class Constructor extends Machine {
     width: number = CONSTRUCTOR_WIDTH;
     height: number = CONSTRUCTOR_HEIGHT;
 
-    constructor(manager: EntityManager) {
-        super(manager, socketInputConfigs, socketOutputConfigs);
+    constructor(manager: EntityManager, recipeId?: RecipeId) {
+        super(manager, socketInputConfigs, socketOutputConfigs, recipeId);
+    }
+
+    clone() {
+        const duplicate = new Constructor(this.manager, this.recipeId);
+        return duplicate;
     }
 
     renderConstruct(canvas: Canvas): void {
